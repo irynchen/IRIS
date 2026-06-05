@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     POSTGRES_USER: str
@@ -15,6 +15,6 @@ class Settings(BaseSettings):
     IRIS_PASSWORD_HASH: str
 
     class Config:
-        env_file = "../.env"
+        env_file = ".env"
 
 settings = Settings()

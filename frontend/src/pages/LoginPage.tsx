@@ -1,32 +1,90 @@
 import React, { useState } from 'react'
-import api from '../api/client'
 import { useNavigate } from 'react-router-dom'
+import api from '../api/client'
+import { useAuthStore } from '../store/authStore'
 
-export default function LoginPage(){
-  const [username, setUsername] = useState('')
+export default function LoginPage() {
   const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const setToken = useAuthStore((s) => s.setToken)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    try{
-      const res = await api.post('/auth/login', { username, password })
-      const token = res.data.access_token
-      window.localStorage.setItem('iris_token', token)
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await api.post<{ access_token: string }>('/auth/login', {
+        username: 'irina',
+        password,
+      })
+      setToken(res.data.access_token)
       navigate('/')
-    }catch(err){
-      alert('Login failed')
+    } catch {
+      setError('Falsches Passwort. Bitte erneut versuchen.')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]">
-      <form onSubmit={submit} className="p-6 bg-white rounded-xl shadow-md w-full max-w-sm">
-        <h1 className="text-2xl mb-4">IRIS</h1>
-        <input className="w-full p-2 border rounded mb-2" placeholder="Benutzer" value={username} onChange={e=>setUsername(e.target.value)} />
-        <input type="password" className="w-full p-2 border rounded mb-4" placeholder="Passwort" value={password} onChange={e=>setPassword(e.target.value)} />
-        <button className="w-full p-2 bg-[var(--color-primary)] text-white rounded">Einloggen</button>
-      </form>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-6"
+      style={{ background: 'var(--color-bg)' }}
+    >
+      {/* Logo */}
+      <div className="mb-10 text-center">
+        <h1
+          className="text-6xl font-semibold text-[var(--color-primary)] mb-2"
+          style={{ fontFamily: 'Cormorant Garamond, serif', letterSpacing: '0.15em' }}
+        >
+          IRIS
+        </h1>
+        <p className="text-[var(--color-text-muted)] text-sm tracking-widest uppercase">
+          Leben im Gleichgewicht
+        </p>
+      </div>
+
+      {/* Login card */}
+      <div
+        className="w-full max-w-sm bg-[var(--color-surface)] rounded-[var(--radius-card)] p-8"
+        style={{ boxShadow: 'var(--shadow-card)' }}
+      >
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-2 tracking-wide uppercase">
+              Passwort
+            </label>
+            <input
+              type="password"
+              className="w-full px-4 py-3 rounded-xl border border-[var(--color-muted)] bg-[var(--color-bg)] focus:outline-none focus:border-[var(--color-primary)] text-sm transition-colors"
+              placeholder="Passwort eingeben"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+              required
+              minLength={1}
+            />
+          </div>
+
+          {error && (
+            <p className="text-red-400 text-xs text-center">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-xl bg-[var(--color-primary)] text-white text-sm font-medium tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60 mt-2"
+          >
+            {loading ? 'Einloggen...' : 'Einloggen'}
+          </button>
+        </form>
+      </div>
+
+      <p className="mt-8 text-[var(--color-text-muted)] text-xs">
+        iris.goeloria.de
+      </p>
     </div>
   )
 }

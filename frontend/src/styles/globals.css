@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #F7F4EF;
+  --color-surface: #FFFFFF;
+  --color-primary: #6B8F71;
+  --color-secondary: #C4A882;
+  --color-accent: #4A7FA5;
+  --color-muted: #E8E2D9;
+  --color-text: #2C2C2C;
+  --color-text-muted: #7A7A7A;
+  --radius-card: 16px;
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.07);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Safe area for iPhone bottom navigation */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

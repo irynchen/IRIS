@@ -1,21 +1,24 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from datetime import datetime, timedelta
-from jose import jwt
+from jose import jwt, JWTError
 from passlib.context import CryptContext
-from ..config import settings
+from config import settings
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 class LoginIn(BaseModel):
     username: str
     password: str
 
+
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
 
 @router.post("/login", response_model=TokenOut)
 async def login(data: LoginIn):
@@ -31,11 +34,8 @@ async def login(data: LoginIn):
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
     return {"access_token": token}
 
-# Dependency helper
-from fastapi import Depends, Request
-from jose import JWTError
 
-async def get_current_user(request: Request):
+async def get_current_user(request: Request) -> dict:
     auth = request.headers.get("Authorization")
     if not auth or not auth.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")

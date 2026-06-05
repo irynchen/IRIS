@@ -1,6 +1,5 @@
-import asyncio
 import asyncpg
-from .config import settings
+from config import settings
 
 CREATE_TABLES_SQL = """
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -56,16 +55,17 @@ CREATE TABLE IF NOT EXISTS home_tasks (
 );
 
 INSERT INTO home_rooms (name, icon, sort_order) VALUES
-    ('Кухня', '🍳', 1),
-    ('Ванная', '🚿', 2),
-    ('Спальня', '🛏', 3),
-    ('Гостиная', '🛋', 4),
-    ('Коридор', '🚪', 5),
-    ('Кабинет', '💻', 6)
+    ('Küche', '🍳', 1),
+    ('Bad', '🚿', 2),
+    ('Schlafzimmer', '🛏', 3),
+    ('Wohnzimmer', '🛋', 4),
+    ('Flur', '🚪', 5),
+    ('Arbeitszimmer', '💻', 6)
 ON CONFLICT DO NOTHING;
 """
 
 _pool: asyncpg.Pool | None = None
+
 
 async def get_pool() -> asyncpg.Pool:
     global _pool
@@ -81,16 +81,8 @@ async def get_pool() -> asyncpg.Pool:
         )
     return _pool
 
-async def create_tables():
+
+async def create_tables() -> None:
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(CREATE_TABLES_SQL)
-
-# Synchronous helper for startup
-def run_create_tables():
-    try:
-        asyncio.get_event_loop().run_until_complete(create_tables())
-    except RuntimeError:
-        # For uvicorn may already be running an event loop
-        import asyncio as _asyncio
-        _asyncio.run(create_tables())
