@@ -119,8 +119,7 @@ async def list_tasks(room_id: Optional[int] = None, user=Depends(get_current_use
 @router.get("/today", response_model=List[TaskOut])
 async def today_tasks(user=Depends(get_current_user)):
     """Tasks that are overdue or due within 2 days."""
-    today = str(Date.today())
-    two_days = str(Date.today() + timedelta(days=2))
+    two_days = Date.today() + timedelta(days=2)
     pool = await get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch(
@@ -146,7 +145,7 @@ async def create_task(item: TaskIn, user=Depends(get_current_user)):
 
 @router.post("/tasks/{task_id}/done", response_model=TaskOut)
 async def mark_done(task_id: int, user=Depends(get_current_user)):
-    today = str(Date.today())
+    today = Date.today()
     pool = await get_pool()
     async with pool.acquire() as conn:
         existing = await conn.fetchrow(
@@ -156,7 +155,7 @@ async def mark_done(task_id: int, user=Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="Task not found")
 
         freq = existing["frequency_days"]
-        next_due = str(Date.today() + timedelta(days=freq)) if freq else None
+        next_due = today + timedelta(days=freq) if freq else None
         row = await conn.fetchrow(
             f"UPDATE home_tasks SET last_done = $1, next_due = $2 WHERE id = $3 "
             f"RETURNING {SELECT_TASK}",

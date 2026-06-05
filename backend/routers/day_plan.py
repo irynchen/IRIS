@@ -82,11 +82,12 @@ async def list_plans(
 
 @router.get("/stats")
 async def day_stats(date: str, user=Depends(get_current_user)):
+    date_obj = Date.fromisoformat(date)
     pool = await get_pool()
     async with pool.acquire() as conn:
-        total = await conn.fetchval("SELECT COUNT(*) FROM day_plan WHERE date = $1", date)
+        total = await conn.fetchval("SELECT COUNT(*) FROM day_plan WHERE date = $1", date_obj)
         done = await conn.fetchval(
-            "SELECT COUNT(*) FROM day_plan WHERE date = $1 AND completed = TRUE", date
+            "SELECT COUNT(*) FROM day_plan WHERE date = $1 AND completed = TRUE", date_obj
         )
         return {"total": total, "done": done}
 
