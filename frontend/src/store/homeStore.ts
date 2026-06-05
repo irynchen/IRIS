@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import {
   HomeRoom, HomeTask,
   fetchRooms, fetchTasks, fetchTodayTasks,
-  markDone as apiMarkDone, createTask as apiCreate, deleteTask as apiDelete,
+  markDone as apiMarkDone, createTask as apiCreate, patchTask as apiPatch, deleteTask as apiDelete,
 } from '../api/home'
 
 interface HomeState {
@@ -15,6 +15,7 @@ interface HomeState {
   loadToday: () => Promise<void>
   markDone: (taskId: number, roomId: number) => Promise<void>
   add: (payload: Parameters<typeof apiCreate>[0]) => Promise<void>
+  update: (taskId: number, roomId: number, payload: Partial<HomeTask>) => Promise<void>
   remove: (taskId: number, roomId: number) => Promise<void>
 }
 
@@ -84,6 +85,21 @@ export const useHomeStore = create<HomeState>((set, get) => ({
         [created.room_id]: [...prev, created],
       },
     })
+  },
+
+  async update(taskId, roomId, payload) {
+    const prev = get().tasksByRoom[roomId] ?? []
+    try {
+      const updated = await apiPatch(taskId, payload)
+      set({
+        tasksByRoom: {
+          ...get().tasksByRoom,
+          [roomId]: prev.map((t) => t.id === taskId ? updated : t),
+        },
+      })
+    } catch {
+      // leave state as-is on error
+    }
   },
 
   async remove(taskId, roomId) {

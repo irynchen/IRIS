@@ -4,6 +4,7 @@ interface Props {
   task: HomeTask
   onDone: () => void
   onDelete: () => void
+  onEdit: () => void
 }
 
 const STATUS_CONFIG = {
@@ -20,7 +21,7 @@ function formatDate(dateStr: string | null): string {
   })
 }
 
-export default function HomeTaskItem({ task, onDone, onDelete }: Props) {
+export default function HomeTaskItem({ task, onDone, onDelete, onEdit }: Props) {
   const cfg = STATUS_CONFIG[task.status]
 
   return (
@@ -52,6 +53,14 @@ export default function HomeTaskItem({ task, onDone, onDelete }: Props) {
         style={{ backgroundColor: 'var(--color-primary)' }}
       >
         ✓ Heute
+      </button>
+
+      <button
+        onClick={onEdit}
+        className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] w-7 h-7 flex items-center justify-center text-sm transition-colors"
+        title="Bearbeiten"
+      >
+        ✏️
       </button>
 
       <button

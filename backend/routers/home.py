@@ -57,8 +57,8 @@ class TaskIn(BaseModel):
 class TaskPatch(BaseModel):
     title: Optional[str] = None
     frequency_days: Optional[int] = None
-    last_done: Optional[str] = None
-    next_due: Optional[str] = None
+    last_done: Optional[str] = None       # empty string "" means reset to NULL
+    next_due: Optional[str] = None        # empty string "" means reset to NULL
     priority: Optional[int] = None
     notes: Optional[str] = None
 
@@ -181,12 +181,25 @@ async def patch_task(task_id: int, patch: TaskPatch, user=Depends(get_current_us
 
         updates = patch.model_dump(exclude_none=True)
 
+        # empty string "" → NULL (reset date fields)
+        for field in ("last_done", "next_due"):
+            if field in updates and updates[field] == "":
+                updates[field] = None
+
         if "last_done" in updates and "next_due" not in updates:
             freq = existing["frequency_days"]
-            if freq:
+            if freq and updates["last_done"]:
                 from datetime import datetime
                 ld = datetime.strptime(updates["last_done"], "%Y-%m-%d").date()
-                updates["next_due"] = str(ld + timedelta(days=freq))
+                updates["next_due"] = ld + timedelta(days=freq)
+            elif not updates["last_done"]:
+                updates["next_due"] = None
+
+        # convert date strings to date objects for asyncpg
+        for field in ("last_done", "next_due"):
+            if field in updates and isinstance(updates[field], str) and updates[field]:
+                from datetime import datetime
+                updates[field] = datetime.strptime(updates[field], "%Y-%m-%d").date()
 
         if not updates:
             raise HTTPException(status_code=400, detail="No fields to update")

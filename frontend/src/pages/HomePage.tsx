@@ -10,9 +10,10 @@ import EmptyState from '../components/ui/EmptyState'
 import BottomSheet from '../components/ui/BottomSheet'
 
 export default function HomePage() {
-  const { rooms, tasksByRoom, todayTasks, loading, error, load, loadToday, markDone, add, remove } =
+  const { rooms, tasksByRoom, todayTasks, loading, error, load, loadToday, markDone, add, update, remove } =
     useHomeStore()
   const [showForm, setShowForm] = useState(false)
+  const [editTask, setEditTask] = useState<HomeTask | undefined>()
   const [selectedRoom, setSelectedRoom] = useState<HomeRoom | null>(null)
   const [formDefaultRoom, setFormDefaultRoom] = useState<number | undefined>()
 
@@ -22,24 +23,51 @@ export default function HomePage() {
   }, [])
 
   function openAddForRoom(room: HomeRoom) {
+    setEditTask(undefined)
     setFormDefaultRoom(room.id)
     setShowForm(true)
   }
 
-  async function handleAdd(form: {
+  function openEdit(task: HomeTask) {
+    setEditTask(task)
+    setFormDefaultRoom(task.room_id)
+    setSelectedRoom(null)  // close room detail sheet
+    setShowForm(true)
+  }
+
+  async function handleFormSubmit(form: {
     room_id: number
     title: string
     frequency_days: string
     last_done: string
     priority: number
   }) {
-    await add({
-      room_id: form.room_id,
-      title: form.title.trim(),
-      frequency_days: form.frequency_days ? Number(form.frequency_days) : null,
-      last_done: form.last_done || null,
-      priority: form.priority,
-    })
+    if (editTask) {
+      // edit mode — PATCH existing task
+      await update(editTask.id, editTask.room_id, {
+        title: form.title.trim(),
+        frequency_days: form.frequency_days ? Number(form.frequency_days) : null,
+        last_done: form.last_done || null,
+        // next_due will be recalculated server-side via existing patch logic
+        next_due: form.last_done && form.frequency_days
+          ? new Date(
+              new Date(form.last_done + 'T00:00:00').getTime() +
+              Number(form.frequency_days) * 86400000
+            ).toISOString().slice(0, 10)
+          : null,
+        priority: form.priority,
+      })
+      setEditTask(undefined)
+    } else {
+      // create mode
+      await add({
+        room_id: form.room_id,
+        title: form.title.trim(),
+        frequency_days: form.frequency_days ? Number(form.frequency_days) : null,
+        last_done: form.last_done || null,
+        priority: form.priority,
+      })
+    }
   }
 
   const selectedTasks = selectedRoom ? (tasksByRoom[selectedRoom.id] ?? []) : []
@@ -53,7 +81,7 @@ export default function HomePage() {
             Zuhause
           </h1>
           <button
-            onClick={() => { setFormDefaultRoom(rooms[0]?.id); setShowForm(true) }}
+            onClick={() => { setEditTask(undefined); setFormDefaultRoom(rooms[0]?.id); setShowForm(true) }}
             className="bg-[var(--color-primary)] text-white rounded-full w-9 h-9 flex items-center justify-center text-lg font-light hover:opacity-90 transition-opacity"
           >
             +
@@ -107,13 +135,14 @@ export default function HomePage() {
                     key={task.id}
                     task={task}
                     onDone={() => markDone(task.id, task.room_id)}
+                    onEdit={() => openEdit(task)}
                     onDelete={() => remove(task.id, task.room_id)}
                   />
                 ))}
               </div>
             )}
             <button
-              onClick={() => { openAddForRoom(selectedRoom); setSelectedRoom(null) }}
+              onClick={() => { openAddForRoom(selectedRoom) }}
               className="mt-4 w-full py-2.5 border-2 border-dashed border-[var(--color-muted)] rounded-xl text-sm text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
             >
               + Aufgabe hinzufügen
@@ -122,13 +151,14 @@ export default function HomePage() {
         )}
       </BottomSheet>
 
-      {/* Add task form */}
+      {/* Add / Edit form */}
       <HomeTaskForm
         open={showForm}
-        onClose={() => setShowForm(false)}
-        onSubmit={handleAdd}
+        onClose={() => { setShowForm(false); setEditTask(undefined) }}
+        onSubmit={handleFormSubmit}
         rooms={rooms}
         defaultRoomId={formDefaultRoom}
+        editTask={editTask}
       />
     </div>
   )
