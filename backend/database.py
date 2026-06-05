@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS day_plan (
     priority INTEGER DEFAULT 2 CHECK (priority BETWEEN 1 AND 3),
     completed BOOLEAN DEFAULT FALSE,
     notes TEXT,
+    repeat_days INTEGER,
+    parent_id INTEGER REFERENCES day_plan(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -62,6 +64,28 @@ INSERT INTO home_rooms (name, icon, sort_order) VALUES
 ON CONFLICT DO NOTHING;
 """
 
+MIGRATE_SQL = """
+ALTER TABLE day_plan ADD COLUMN IF NOT EXISTS repeat_days INTEGER;
+ALTER TABLE day_plan ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES day_plan(id) ON DELETE SET NULL;
+"""
+
+SEED_HOME_TASKS_SQL = """
+INSERT INTO home_tasks (room_id, title, frequency_days, priority) VALUES
+    ((SELECT id FROM home_rooms WHERE name='Küche'), 'Arbeitsplatte abwischen', 1, 1),
+    ((SELECT id FROM home_rooms WHERE name='Küche'), 'Herd reinigen', 7, 2),
+    ((SELECT id FROM home_rooms WHERE name='Küche'), 'Kühlschrank aufräumen', 14, 3),
+    ((SELECT id FROM home_rooms WHERE name='Bad'), 'WC reinigen', 7, 1),
+    ((SELECT id FROM home_rooms WHERE name='Bad'), 'Dusche reinigen', 7, 1),
+    ((SELECT id FROM home_rooms WHERE name='Bad'), 'Spiegel putzen', 14, 2),
+    ((SELECT id FROM home_rooms WHERE name='Schlafzimmer'), 'Bettzeug wechseln', 14, 1),
+    ((SELECT id FROM home_rooms WHERE name='Schlafzimmer'), 'Stauben', 14, 2),
+    ((SELECT id FROM home_rooms WHERE name='Wohnzimmer'), 'Saugen', 7, 1),
+    ((SELECT id FROM home_rooms WHERE name='Wohnzimmer'), 'Stauben', 14, 2),
+    ((SELECT id FROM home_rooms WHERE name='Flur'), 'Boden wischen', 7, 2),
+    ((SELECT id FROM home_rooms WHERE name='Arbeitszimmer'), 'Schreibtisch aufräumen', 7, 2)
+ON CONFLICT DO NOTHING;
+"""
+
 _pool: asyncpg.Pool | None = None
 
 
@@ -84,3 +108,7 @@ async def create_tables() -> None:
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(CREATE_TABLES_SQL)
+        await conn.execute(MIGRATE_SQL)
+        count = await conn.fetchval("SELECT COUNT(*) FROM home_tasks")
+        if count == 0:
+            await conn.execute(SEED_HOME_TASKS_SQL)
