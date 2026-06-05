@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
-import { CATEGORIES, PRIORITY_COLORS } from '../../api/day'
+import { DayTask, CATEGORIES, PRIORITY_COLORS } from '../../api/day'
 import BottomSheet from '../ui/BottomSheet'
 
 interface FormData {
   title: string
+  date: string
   time_from: string
   time_to: string
+  all_day: boolean
   category: string
   priority: number
   notes: string
@@ -17,6 +19,7 @@ interface Props {
   onClose: () => void
   onSubmit: (data: FormData) => Promise<void>
   date: string
+  initialData?: DayTask
 }
 
 const PRIORITY_LABELS: Record<number, string> = { 1: 'Hoch', 2: 'Mittel', 3: 'Niedrig' }
@@ -28,20 +31,39 @@ const REPEAT_OPTIONS = [
   { label: '2 Wochen', value: '14' },
 ]
 
-export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
+function buildInitial(date: string, initialData?: DayTask): FormData {
+  if (initialData) {
+    return {
+      title: initialData.title,
+      date: initialData.date,
+      time_from: initialData.time_from ?? '',
+      time_to: initialData.time_to ?? '',
+      all_day: !initialData.time_from,
+      category: initialData.category ?? 'personal',
+      priority: initialData.priority,
+      notes: initialData.notes ?? '',
+      repeat_days: initialData.repeat_days?.toString() ?? '',
+    }
+  }
+  return { title: '', date, time_from: '', time_to: '', all_day: false, category: 'personal', priority: 2, notes: '', repeat_days: '' }
+}
+
+export default function TaskForm({ open, onClose, onSubmit, date, initialData }: Props) {
+  const editMode = !!initialData
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState<FormData>({
-    title: '',
-    time_from: '',
-    time_to: '',
-    category: 'personal',
-    priority: 2,
-    notes: '',
-    repeat_days: '',
-  })
+  const [form, setForm] = useState<FormData>(() => buildInitial(date, initialData))
+
+  // re-sync when the edited task changes
+  React.useEffect(() => {
+    setForm(buildInitial(date, initialData))
+  }, [initialData?.id, date])
+
+  function set(patch: Partial<FormData>) {
+    setForm(f => ({ ...f, ...patch }))
+  }
 
   function reset() {
-    setForm({ title: '', time_from: '', time_to: '', category: 'personal', priority: 2, notes: '', repeat_days: '' })
+    setForm(buildInitial(date, undefined))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -50,7 +72,7 @@ export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
     setSaving(true)
     try {
       await onSubmit(form)
-      reset()
+      if (!editMode) reset()
       onClose()
     } finally {
       setSaving(false)
@@ -58,38 +80,70 @@ export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
   }
 
   return (
-    <BottomSheet open={open} onClose={() => { reset(); onClose() }} title="Neue Aufgabe">
+    <BottomSheet open={open} onClose={() => { if (!editMode) reset(); onClose() }} title={editMode ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+        {/* Title */}
         <input
           className="w-full p-3 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-transparent"
           placeholder="Was planst du?"
           value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          onChange={(e) => set({ title: e.target.value })}
           autoFocus
           required
         />
 
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Von</label>
+        {/* Date + all-day */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Datum</label>
             <input
-              type="time"
+              type="date"
               className="w-full p-2.5 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-transparent"
-              value={form.time_from}
-              onChange={(e) => setForm({ ...form, time_from: e.target.value })}
+              value={form.date}
+              onChange={(e) => set({ date: e.target.value })}
             />
           </div>
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Bis</label>
-            <input
-              type="time"
-              className="w-full p-2.5 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-transparent"
-              value={form.time_to}
-              onChange={(e) => setForm({ ...form, time_to: e.target.value })}
-            />
+          <div className="flex-shrink-0 mt-5">
+            <button
+              type="button"
+              onClick={() => set({ all_day: !form.all_day, time_from: '', time_to: '' })}
+              className={`px-3 py-2.5 rounded-xl text-xs font-medium border transition-colors ${
+                form.all_day
+                  ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)]'
+                  : 'border-[var(--color-muted)] text-[var(--color-text-muted)]'
+              }`}
+            >
+              Ganztätig
+            </button>
           </div>
         </div>
 
+        {/* Time fields — hidden when all-day */}
+        {!form.all_day && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Von</label>
+              <input
+                type="time"
+                className="w-full p-2.5 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-transparent"
+                value={form.time_from}
+                onChange={(e) => set({ time_from: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Bis</label>
+              <input
+                type="time"
+                className="w-full p-2.5 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-transparent"
+                value={form.time_to}
+                onChange={(e) => set({ time_to: e.target.value })}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Category */}
         <div>
           <label className="text-xs text-[var(--color-text-muted)] mb-2 block">Kategorie</label>
           <div className="flex flex-wrap gap-2">
@@ -97,7 +151,7 @@ export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
               <button
                 key={key}
                 type="button"
-                onClick={() => setForm({ ...form, category: key })}
+                onClick={() => set({ category: key })}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                 style={
                   form.category === key
@@ -112,6 +166,7 @@ export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
           </div>
         </div>
 
+        {/* Priority */}
         <div>
           <label className="text-xs text-[var(--color-text-muted)] mb-2 block">Priorität</label>
           <div className="flex gap-2">
@@ -119,7 +174,7 @@ export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
               <button
                 key={p}
                 type="button"
-                onClick={() => setForm({ ...form, priority: p })}
+                onClick={() => set({ priority: p })}
                 className="flex-1 py-2 rounded-xl text-xs font-medium transition-all"
                 style={
                   form.priority === p
@@ -133,6 +188,7 @@ export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
           </div>
         </div>
 
+        {/* Repeat */}
         <div>
           <label className="text-xs text-[var(--color-text-muted)] mb-2 block">Wiederholen</label>
           <div className="flex flex-wrap gap-2">
@@ -140,7 +196,7 @@ export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setForm({ ...form, repeat_days: opt.value })}
+                onClick={() => set({ repeat_days: opt.value })}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   form.repeat_days === opt.value
                     ? 'bg-[var(--color-accent)] text-white'
@@ -153,18 +209,19 @@ export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
           </div>
         </div>
 
+        {/* Notes */}
         <textarea
           className="w-full p-3 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm resize-none bg-transparent"
           placeholder="Notizen (optional)"
           rows={2}
           value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          onChange={(e) => set({ notes: e.target.value })}
         />
 
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => { reset(); onClose() }}
+            onClick={() => { if (!editMode) reset(); onClose() }}
             className="flex-1 py-3 rounded-xl border border-[var(--color-muted)] text-sm font-medium"
           >
             Abbrechen
@@ -174,7 +231,7 @@ export default function TaskForm({ open, onClose, onSubmit, date }: Props) {
             disabled={saving}
             className="flex-1 py-3 rounded-xl bg-[var(--color-primary)] text-white text-sm font-medium disabled:opacity-60 transition-opacity"
           >
-            {saving ? '…' : 'Hinzufügen'}
+            {saving ? '…' : editMode ? 'Speichern' : 'Hinzufügen'}
           </button>
         </div>
       </form>

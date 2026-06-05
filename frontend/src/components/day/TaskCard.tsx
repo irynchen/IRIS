@@ -5,22 +5,26 @@ interface Props {
   task: DayTask
   onToggle: (id: number) => void
   onDelete: (id: number) => void
+  onEdit?: (task: DayTask) => void
 }
 
-export default function TaskCard({ task, onToggle, onDelete }: Props) {
+export default function TaskCard({ task, onToggle, onDelete, onEdit }: Props) {
   const cat = CATEGORIES[task.category ?? '']
   const [offsetX, setOffsetX] = useState(0)
   const startX = useRef<number | null>(null)
   const deleted = useRef(false)
+  const isSwiping = useRef(false)
 
   function handleTouchStart(e: React.TouchEvent) {
     startX.current = e.touches[0].clientX
     deleted.current = false
+    isSwiping.current = false
   }
 
   function handleTouchMove(e: React.TouchEvent) {
     if (startX.current === null) return
     const dx = e.touches[0].clientX - startX.current
+    if (Math.abs(dx) > 5) isSwiping.current = true
     if (dx < 0) setOffsetX(Math.max(dx, -80))
   }
 
@@ -31,6 +35,10 @@ export default function TaskCard({ task, onToggle, onDelete }: Props) {
     }
     setOffsetX(0)
     startX.current = null
+  }
+
+  function handleContentClick() {
+    if (!isSwiping.current) onEdit?.(task)
   }
 
   return (
@@ -70,8 +78,8 @@ export default function TaskCard({ task, onToggle, onDelete }: Props) {
           {task.completed && <span className="text-white text-xs">✓</span>}
         </button>
 
-        {/* content */}
-        <div className="flex-1 min-w-0">
+        {/* content — tap to edit */}
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={handleContentClick}>
           <p className={`text-sm font-medium truncate ${task.completed ? 'line-through text-[var(--color-text-muted)]' : ''}`}>
             {task.title}
           </p>

@@ -10,6 +10,7 @@ interface DayState {
   load: (date: string) => Promise<void>
   toggle: (id: number) => Promise<void>
   add: (payload: Partial<DayTask>) => Promise<DayTask>
+  update: (id: number, payload: Partial<DayTask>) => Promise<void>
   remove: (id: number) => Promise<void>
 }
 
@@ -60,6 +61,21 @@ export const useDayStore = create<DayState>((set, get) => ({
       ),
     }))
     return created
+  },
+
+  async update(id, payload) {
+    const prev = get().tasks
+    try {
+      const updated = await patchTask(id, payload)
+      // if date changed, remove from current view; otherwise replace
+      if (updated.date !== get().currentDate) {
+        set({ tasks: prev.filter((t) => t.id !== id) })
+      } else {
+        set({ tasks: prev.map((t) => t.id === id ? updated : t) })
+      }
+    } catch {
+      set({ tasks: prev })
+    }
   },
 
   async remove(id) {

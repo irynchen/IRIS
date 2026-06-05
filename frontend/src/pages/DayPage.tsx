@@ -6,7 +6,7 @@ import DayFocus from '../components/day/DayFocus'
 import TaskCard from '../components/day/TaskCard'
 import EmptyState from '../components/ui/EmptyState'
 import SkeletonCard from '../components/ui/SkeletonCard'
-import { CATEGORIES } from '../api/day'
+import type { DayTask } from '../api/day'
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
@@ -26,23 +26,28 @@ function formatShort(dateStr: string): { weekday: string; day: string } {
   }
 }
 
-function formatLong(dateStr: string): string {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('de-DE', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
-}
-
 function buildDateRange(center: string): string[] {
   return [-3, -2, -1, 0, 1, 2, 3].map((n) => addDays(center, n))
 }
 
 type ViewMode = 'timeline' | 'list'
 
+interface FormData {
+  title: string
+  date: string
+  time_from: string
+  time_to: string
+  all_day: boolean
+  category: string
+  priority: number
+  notes: string
+  repeat_days: string
+}
+
 export default function DayPage() {
-  const { tasks, loading, error, currentDate, setDate, load, toggle, add, remove } = useDayStore()
+  const { tasks, loading, error, currentDate, setDate, load, toggle, add, update, remove } = useDayStore()
   const [showForm, setShowForm] = useState(false)
+  const [editingTask, setEditingTask] = useState<DayTask | undefined>(undefined)
   const [view, setView] = useState<ViewMode>('timeline')
   const today = todayStr()
   const stripRef = useRef<HTMLDivElement>(null)
@@ -51,7 +56,6 @@ export default function DayPage() {
     load(currentDate)
   }, [currentDate])
 
-  // scroll date strip so active is centered
   useEffect(() => {
     const el = stripRef.current?.querySelector<HTMLElement>('[data-active="true"]')
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
@@ -59,25 +63,32 @@ export default function DayPage() {
 
   const dates = buildDateRange(currentDate)
 
-  async function handleAdd(form: {
-    title: string
-    time_from: string
-    time_to: string
-    category: string
-    priority: number
-    notes: string
-    repeat_days: string
-  }) {
-    await add({
-      date: currentDate,
+  function handleEdit(task: DayTask) {
+    setEditingTask(task)
+    setShowForm(true)
+  }
+
+  function handleClose() {
+    setShowForm(false)
+    setEditingTask(undefined)
+  }
+
+  async function handleFormSubmit(form: FormData) {
+    const payload = {
       title: form.title.trim(),
-      time_from: form.time_from || null,
-      time_to: form.time_to || null,
+      date: form.date,
+      time_from: form.all_day ? null : form.time_from || null,
+      time_to: form.all_day ? null : form.time_to || null,
       category: form.category,
       priority: form.priority,
       notes: form.notes || null,
       repeat_days: form.repeat_days ? Number(form.repeat_days) : null,
-    })
+    }
+    if (editingTask) {
+      await update(editingTask.id, payload)
+    } else {
+      await add({ ...payload, date: form.date || currentDate })
+    }
   }
 
   const incomplete = tasks.filter((t) => !t.completed)
@@ -92,7 +103,6 @@ export default function DayPage() {
             Mein Tag
           </h1>
           <div className="flex items-center gap-2">
-            {/* view toggle */}
             <div className="flex bg-[var(--color-muted)] rounded-lg p-0.5">
               {(['timeline', 'list'] as ViewMode[]).map((v) => (
                 <button
@@ -109,7 +119,7 @@ export default function DayPage() {
               ))}
             </div>
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => { setEditingTask(undefined); setShowForm(true) }}
               className="bg-[var(--color-primary)] text-white rounded-full w-9 h-9 flex items-center justify-center text-lg font-light hover:opacity-90 transition-opacity"
             >
               +
@@ -169,7 +179,7 @@ export default function DayPage() {
             {tasks.length > 0 && <DayFocus tasks={tasks} />}
 
             {view === 'timeline' ? (
-              <Timeline tasks={tasks} onToggle={toggle} onDelete={remove} />
+              <Timeline tasks={tasks} onToggle={toggle} onDelete={remove} onEdit={handleEdit} />
             ) : (
               <div>
                 {tasks.length === 0 && (
@@ -177,7 +187,7 @@ export default function DayPage() {
                 )}
                 <div className="flex flex-col gap-2">
                   {incomplete.map((t) => (
-                    <TaskCard key={t.id} task={t} onToggle={toggle} onDelete={remove} />
+                    <TaskCard key={t.id} task={t} onToggle={toggle} onDelete={remove} onEdit={handleEdit} />
                   ))}
                 </div>
 
@@ -188,7 +198,7 @@ export default function DayPage() {
                     </p>
                     <div className="flex flex-col gap-2 opacity-60">
                       {completed.map((t) => (
-                        <TaskCard key={t.id} task={t} onToggle={toggle} onDelete={remove} />
+                        <TaskCard key={t.id} task={t} onToggle={toggle} onDelete={remove} onEdit={handleEdit} />
                       ))}
                     </div>
                   </div>
@@ -200,10 +210,12 @@ export default function DayPage() {
       </div>
 
       <TaskForm
+        key={editingTask?.id ?? 'new'}
         open={showForm}
-        onClose={() => setShowForm(false)}
-        onSubmit={handleAdd}
+        onClose={handleClose}
+        onSubmit={handleFormSubmit}
         date={currentDate}
+        initialData={editingTask}
       />
     </div>
   )
