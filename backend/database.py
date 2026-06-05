@@ -111,6 +111,16 @@ ALTER TABLE health_records ADD COLUMN IF NOT EXISTS sleep_notes TEXT;
 ALTER TABLE health_records ADD COLUMN IF NOT EXISTS knee_exercises_done BOOLEAN DEFAULT FALSE;
 ALTER TABLE health_records ADD COLUMN IF NOT EXISTS anxiety INTEGER;
 ALTER TABLE health_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'health_records_date_key' AND conrelid = 'health_records'::regclass
+  ) THEN
+    ALTER TABLE health_records ADD CONSTRAINT health_records_date_key UNIQUE (date);
+  END IF;
+END
+$$;
 """
 
 SEED_HOME_TASKS_SQL = """
