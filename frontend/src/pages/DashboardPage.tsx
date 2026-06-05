@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import DayWidget from '../components/dashboard/DayWidget'
 import HomeWidget from '../components/dashboard/HomeWidget'
+import HealthWidget from '../components/dashboard/HealthWidget'
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -53,6 +54,13 @@ export default function DashboardPage() {
             🏡 Zuhause
           </p>
           <HomeWidget />
+        </Card>
+
+        <Card onClick={() => navigate('/health')} className="cursor-pointer col-span-2">
+          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
+            💚 Gesundheit
+          </p>
+          <HealthWidget />
         </Card>
       </div>
 

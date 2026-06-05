@@ -1,4 +1,3 @@
-import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import AppShell from './components/layout/AppShell'
@@ -6,6 +5,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import DayPage from './pages/DayPage'
 import HomePage from './pages/HomePage'
+import HealthPage from './pages/HealthPage'
 
 function PlaceholderPage({ title, emoji }: { title: string; emoji: string }) {
   return (
@@ -31,7 +31,7 @@ function ProtectedRoutes() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/day" element={<DayPage />} />
         <Route path="/home" element={<HomePage />} />
-        <Route path="/health" element={<PlaceholderPage title="Gesundheit" emoji="💚" />} />
+        <Route path="/health" element={<HealthPage />} />
         <Route path="/travel" element={<PlaceholderPage title="Reisen" emoji="✈️" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

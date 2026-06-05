@@ -4,21 +4,47 @@ from config import settings
 CREATE_TABLES_SQL = """
 CREATE TABLE IF NOT EXISTS health_records (
     id SERIAL PRIMARY KEY,
-    date DATE NOT NULL,
+    date DATE NOT NULL UNIQUE,
     weight_kg NUMERIC(5,2),
-    bp_systolic INTEGER,
-    bp_diastolic INTEGER,
-    pulse INTEGER,
+    bp_morning_systolic INTEGER,
+    bp_morning_diastolic INTEGER,
+    pulse_morning INTEGER,
+    bp_evening_systolic INTEGER,
+    bp_evening_diastolic INTEGER,
+    pulse_evening INTEGER,
+    medication_taken BOOLEAN DEFAULT FALSE,
+    medication_notes TEXT,
     sleep_hours NUMERIC(4,2),
     sleep_quality INTEGER CHECK (sleep_quality BETWEEN 1 AND 10),
+    sleep_notes TEXT,
     knee_pain INTEGER CHECK (knee_pain BETWEEN 0 AND 10),
-    knee_swelling VARCHAR(20),
+    knee_swelling VARCHAR(20) CHECK (knee_swelling IN ('none','mild','moderate','severe')),
+    knee_exercises_done BOOLEAN DEFAULT FALSE,
     steps INTEGER,
     mood INTEGER CHECK (mood BETWEEN 1 AND 10),
     energy INTEGER CHECK (energy BETWEEN 1 AND 10),
+    anxiety INTEGER CHECK (anxiety BETWEEN 0 AND 10),
     notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS health_goals (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(50) UNIQUE NOT NULL,
+    target_value NUMERIC,
+    target_value2 NUMERIC,
+    unit VARCHAR(20),
+    notes TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO health_goals (key, target_value, unit) VALUES
+    ('weight', 75.0, 'kg'),
+    ('steps', 6000, 'Schritte'),
+    ('sleep', 7.5, 'Stunden'),
+    ('bp_systolic', 120, 'mmHg')
+ON CONFLICT (key) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS day_plan (
     id SERIAL PRIMARY KEY,
@@ -73,6 +99,18 @@ ON CONFLICT (sort_order) DO NOTHING;
 MIGRATE_SQL = """
 ALTER TABLE day_plan ADD COLUMN IF NOT EXISTS repeat_days INTEGER;
 ALTER TABLE day_plan ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES day_plan(id) ON DELETE SET NULL;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS bp_morning_systolic INTEGER;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS bp_morning_diastolic INTEGER;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS pulse_morning INTEGER;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS bp_evening_systolic INTEGER;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS bp_evening_diastolic INTEGER;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS pulse_evening INTEGER;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS medication_taken BOOLEAN DEFAULT FALSE;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS medication_notes TEXT;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS sleep_notes TEXT;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS knee_exercises_done BOOLEAN DEFAULT FALSE;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS anxiety INTEGER;
+ALTER TABLE health_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 """
 
 SEED_HOME_TASKS_SQL = """
