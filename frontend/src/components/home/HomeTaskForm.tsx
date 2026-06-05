@@ -6,6 +6,7 @@ interface FormData {
   room_id: number
   title: string
   frequency_days: string
+  last_done: string
   priority: number
 }
 
@@ -26,12 +27,17 @@ const FREQ_OPTIONS = [
   { label: '1 Monat', value: '30' },
 ]
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRoomId }: Props) {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<FormData>({
     room_id: defaultRoomId ?? rooms[0]?.id ?? 0,
     title: '',
     frequency_days: '7',
+    last_done: todayStr(),
     priority: 2,
   })
 
@@ -40,6 +46,7 @@ export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRo
       room_id: defaultRoomId ?? rooms[0]?.id ?? 0,
       title: '',
       frequency_days: '7',
+      last_done: todayStr(),
       priority: 2,
     })
   }
@@ -103,6 +110,24 @@ export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRo
             ))}
           </div>
         </div>
+
+        {form.frequency_days && (
+          <div>
+            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">
+              Zuletzt erledigt
+              <span className="ml-1 text-[var(--color-text-muted)] font-normal">
+                → nächste Fälligkeit wird berechnet
+              </span>
+            </label>
+            <input
+              type="date"
+              max={todayStr()}
+              className="w-full p-3 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-transparent"
+              value={form.last_done}
+              onChange={(e) => setForm({ ...form, last_done: e.target.value })}
+            />
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button

@@ -49,6 +49,7 @@ class TaskIn(BaseModel):
     room_id: int
     title: str
     frequency_days: Optional[int] = None
+    last_done: Optional[str] = None
     priority: int = 2
     notes: Optional[str] = None
 
@@ -133,12 +134,16 @@ async def today_tasks(user=Depends(get_current_user)):
 
 @router.post("/tasks", response_model=TaskOut)
 async def create_task(item: TaskIn, user=Depends(get_current_user)):
+    last_done = Date.fromisoformat(item.last_done) if item.last_done else None
+    next_due = None
+    if last_done and item.frequency_days:
+        next_due = last_done + timedelta(days=item.frequency_days)
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            f"INSERT INTO home_tasks (room_id, title, frequency_days, priority, notes) "
-            f"VALUES ($1,$2,$3,$4,$5) RETURNING {SELECT_TASK}",
-            item.room_id, item.title, item.frequency_days, item.priority, item.notes,
+            f"INSERT INTO home_tasks (room_id, title, frequency_days, last_done, next_due, priority, notes) "
+            f"VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING {SELECT_TASK}",
+            item.room_id, item.title, item.frequency_days, last_done, next_due, item.priority, item.notes,
         )
         return row_to_task(row)
 

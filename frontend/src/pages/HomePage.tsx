@@ -30,12 +30,14 @@ export default function HomePage() {
     room_id: number
     title: string
     frequency_days: string
+    last_done: string
     priority: number
   }) {
     await add({
       room_id: form.room_id,
       title: form.title.trim(),
       frequency_days: form.frequency_days ? Number(form.frequency_days) : null,
+      last_done: form.last_done || null,
       priority: form.priority,
     })
   }

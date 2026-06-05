@@ -46,6 +46,7 @@ export async function createTask(payload: {
   room_id: number
   title: string
   frequency_days?: number | null
+  last_done?: string | null
   priority?: number
   notes?: string | null
 }): Promise<HomeTask> {
