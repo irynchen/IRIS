@@ -137,8 +137,18 @@ export default function TodayForm() {
     setForm(f => ({ ...f, [field]: val }))
   }
 
+  const BP_FIELD_MAP: Record<string, string> = {
+    bp_morning_systolic: 'morSys',
+    bp_morning_diastolic: 'morDia',
+    pulse_morning: 'morPulse',
+    bp_evening_systolic: 'eveSys',
+    bp_evening_diastolic: 'eveDia',
+    pulse_evening: 'evePulse',
+    medication_taken: 'medTaken',
+  }
+
   function handleBPChange(field: string, val: string | boolean) {
-    set(field, val)
+    set(BP_FIELD_MAP[field] ?? field, val)
   }
 
   async function handleSubmit(e: React.FormEvent) {
