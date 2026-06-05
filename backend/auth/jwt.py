@@ -2,12 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
-from passlib.context import CryptContext
+import bcrypt
 from config import settings
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class LoginIn(BaseModel):
@@ -26,7 +24,7 @@ async def login(data: LoginIn):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if not settings.IRIS_PASSWORD_HASH:
         raise HTTPException(status_code=500, detail="Server not configured with password hash")
-    if not pwd_context.verify(data.password, settings.IRIS_PASSWORD_HASH):
+    if not bcrypt.checkpw(data.password.encode(), settings.IRIS_PASSWORD_HASH.encode()):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     expire = datetime.utcnow() + timedelta(hours=int(settings.JWT_EXPIRE_HOURS))
