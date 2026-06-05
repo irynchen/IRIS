@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import date as Date, timedelta
@@ -51,6 +51,10 @@ class DayTaskOut(BaseModel):
     created_at: Optional[str] = None
 
 
+def parse_date(s: str) -> Date:
+    return Date.fromisoformat(s)
+
+
 @router.get("/plans", response_model=List[DayTaskOut])
 async def list_plans(
     date: Optional[str] = None,
@@ -64,13 +68,13 @@ async def list_plans(
             rows = await conn.fetch(
                 f"SELECT {SELECT_COLS} FROM day_plan WHERE date = $1 "
                 "ORDER BY time_from NULLS LAST, priority, id",
-                date,
+                parse_date(date),
             )
         elif date_from and date_to:
             rows = await conn.fetch(
                 f"SELECT {SELECT_COLS} FROM day_plan WHERE date BETWEEN $1 AND $2 "
                 "ORDER BY date, time_from NULLS LAST, priority",
-                date_from, date_to,
+                parse_date(date_from), parse_date(date_to),
             )
         else:
             rows = await conn.fetch(
@@ -82,7 +86,7 @@ async def list_plans(
 
 @router.get("/stats")
 async def day_stats(date: str, user=Depends(get_current_user)):
-    date_obj = Date.fromisoformat(date)
+    date_obj = parse_date(date)
     pool = await get_pool()
     async with pool.acquire() as conn:
         total = await conn.fetchval("SELECT COUNT(*) FROM day_plan WHERE date = $1", date_obj)
@@ -99,7 +103,7 @@ async def create_plan(item: DayTaskIn, user=Depends(get_current_user)):
         row = await conn.fetchrow(
             f"INSERT INTO day_plan (date, time_from, time_to, title, category, priority, notes, repeat_days) "
             f"VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING {SELECT_COLS}",
-            item.date, item.time_from, item.time_to, item.title,
+            parse_date(item.date), item.time_from, item.time_to, item.title,
             item.category, item.priority, item.notes, item.repeat_days,
         )
         return dict(row)
@@ -126,17 +130,14 @@ async def patch_plan(plan_id: int, patch: DayTaskPatch, user=Depends(get_current
             plan_id, *values,
         )
 
-        # auto-create next occurrence when completing a repeating task
         completing = patch.completed is True and not existing["completed"]
         if completing and existing["repeat_days"]:
-            task_date = existing["date"]
-            next_date = task_date + timedelta(days=existing["repeat_days"])
+            next_date = existing["date"] + timedelta(days=existing["repeat_days"])
             await conn.execute(
                 "INSERT INTO day_plan (date, time_from, time_to, title, category, priority, notes, repeat_days, parent_id) "
                 "SELECT $1, time_from, time_to, title, category, priority, notes, repeat_days, id "
-                "FROM day_plan WHERE id = $2 "
-                "ON CONFLICT DO NOTHING",
-                str(next_date), plan_id,
+                "FROM day_plan WHERE id = $2",
+                next_date, plan_id,
             )
 
         return dict(row)
@@ -163,7 +164,7 @@ async def complete_plan(plan_id: int, user=Depends(get_current_user)):
                 "INSERT INTO day_plan (date, time_from, time_to, title, category, priority, notes, repeat_days, parent_id) "
                 "SELECT $1, time_from, time_to, title, category, priority, notes, repeat_days, id "
                 "FROM day_plan WHERE id = $2",
-                str(next_date), plan_id,
+                next_date, plan_id,
             )
 
         return dict(row)
