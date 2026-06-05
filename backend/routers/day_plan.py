@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import date as Date, timedelta
+from datetime import date as Date, time as Time, timedelta
 from database import get_pool
 from auth.jwt import get_current_user
 
@@ -55,6 +55,24 @@ def parse_date(s: str) -> Date:
     return Date.fromisoformat(s)
 
 
+def parse_time(s: Optional[str]) -> Optional[Time]:
+    if not s:
+        return None
+    # HTML time input gives "HH:MM"; ensure we have a valid isoformat string
+    parts = s.split(":")
+    h, m = int(parts[0]), int(parts[1])
+    sec = int(parts[2]) if len(parts) > 2 else 0
+    return Time(h, m, sec)
+
+
+def coerce_updates(updates: dict) -> dict:
+    """Convert time string values to datetime.Time objects for asyncpg."""
+    for key in ("time_from", "time_to"):
+        if key in updates:
+            updates[key] = parse_time(updates[key])
+    return updates
+
+
 @router.get("/plans", response_model=List[DayTaskOut])
 async def list_plans(
     date: Optional[str] = None,
@@ -103,7 +121,7 @@ async def create_plan(item: DayTaskIn, user=Depends(get_current_user)):
         row = await conn.fetchrow(
             f"INSERT INTO day_plan (date, time_from, time_to, title, category, priority, notes, repeat_days) "
             f"VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING {SELECT_COLS}",
-            parse_date(item.date), item.time_from, item.time_to, item.title,
+            parse_date(item.date), parse_time(item.time_from), parse_time(item.time_to), item.title,
             item.category, item.priority, item.notes, item.repeat_days,
         )
         return dict(row)
@@ -119,7 +137,7 @@ async def patch_plan(plan_id: int, patch: DayTaskPatch, user=Depends(get_current
         if not existing:
             raise HTTPException(status_code=404, detail="Task not found")
 
-        updates = patch.model_dump(exclude_none=True)
+        updates = coerce_updates(patch.model_dump(exclude_none=True))
         if not updates:
             raise HTTPException(status_code=400, detail="No fields to update")
 
