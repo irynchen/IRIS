@@ -56,13 +56,18 @@ CREATE TABLE IF NOT EXISTS home_tasks (
 );
 
 INSERT INTO home_rooms (name, icon, sort_order) VALUES
-    ('Küche', '🍳', 1),
-    ('Bad', '🚿', 2),
-    ('Schlafzimmer', '🛏', 3),
-    ('Wohnzimmer', '🛋', 4),
-    ('Flur', '🚪', 5),
-    ('Arbeitszimmer', '💻', 6)
-ON CONFLICT DO NOTHING;
+    ('Küche',         '🍳',  1),
+    ('Bad',           '🚿',  2),
+    ('Schlafzimmer',  '🛏',  3),
+    ('Wohnzimmer',    '🛋',  4),
+    ('Flur',          '🚪',  5),
+    ('Arbeitszimmer', '💻',  6),
+    ('Esszimmer',     '🍽',  7),
+    ('Gästebad',      '🛁',  8),
+    ('Balkon',        '🌿',  9),
+    ('Keller',        '📦', 10),
+    ('Auto',          '🚗', 11)
+ON CONFLICT (sort_order) DO NOTHING;
 """
 
 MIGRATE_SQL = """
