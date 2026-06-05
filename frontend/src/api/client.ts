@@ -7,7 +7,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = window.localStorage.getItem('iris_token')
-  if (token) config.headers = { ...config.headers, Authorization: `Bearer ${token}` }
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 

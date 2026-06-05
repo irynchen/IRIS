@@ -2,8 +2,6 @@ import asyncpg
 from config import settings
 
 CREATE_TABLES_SQL = """
-CREATE EXTENSION IF NOT EXISTS vector;
-
 CREATE TABLE IF NOT EXISTS health_records (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL,
