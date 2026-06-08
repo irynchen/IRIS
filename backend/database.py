@@ -46,6 +46,90 @@ INSERT INTO health_goals (key, target_value, unit) VALUES
     ('bp_systolic', 120, 'mmHg')
 ON CONFLICT (key) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS life_vision (
+    id SERIAL PRIMARY KEY,
+    horizon VARCHAR(20) UNIQUE NOT NULL,
+    content TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO life_vision (horizon) VALUES
+    ('10_years'), ('5_years'), ('3_years')
+ON CONFLICT (horizon) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS goal_areas (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    icon VARCHAR(50),
+    color VARCHAR(30),
+    sort_order INTEGER DEFAULT 0,
+    UNIQUE (sort_order)
+);
+
+CREATE TABLE IF NOT EXISTS goals (
+    id SERIAL PRIMARY KEY,
+    area_id INTEGER REFERENCES goal_areas(id) ON DELETE SET NULL,
+    title VARCHAR(300) NOT NULL,
+    description TEXT,
+    why_important TEXT,
+    horizon VARCHAR(20) NOT NULL DEFAULT '1_year',
+    year INTEGER,
+    month INTEGER,
+    progress INTEGER DEFAULT 0 CHECK (progress BETWEEN 0 AND 100),
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active','paused','done','dropped')),
+    energy_level VARCHAR(20) DEFAULT 'ok',
+    deadline DATE,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS monthly_focus (
+    id SERIAL PRIMARY KEY,
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL,
+    theme TEXT,
+    goal_1 TEXT,
+    goal_2 TEXT,
+    goal_3 TEXT,
+    reward TEXT,
+    review TEXT,
+    UNIQUE(year, month)
+);
+
+CREATE TABLE IF NOT EXISTS doctors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    specialty VARCHAR(100),
+    phone VARCHAR(50),
+    email VARCHAR(100),
+    address TEXT,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS doctor_appointments (
+    id SERIAL PRIMARY KEY,
+    doctor_id INTEGER REFERENCES doctors(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    time TIME,
+    reason VARCHAR(300),
+    notes TEXT,
+    status VARCHAR(20) DEFAULT 'planned' CHECK (status IN ('planned','done','cancelled')),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS medications (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    dosage VARCHAR(100),
+    frequency VARCHAR(200),
+    stock_count INTEGER,
+    notes TEXT,
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS day_plan (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL,
@@ -81,6 +165,19 @@ CREATE TABLE IF NOT EXISTS home_tasks (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+INSERT INTO goal_areas (name, icon, color, sort_order) VALUES
+    ('Gesundheit & Körper', '💚', '#6B8F71',  1),
+    ('Schönheit & Pflege',  '💄', '#C4A882',  2),
+    ('Finanzen',            '💶', '#4A7FA5',  3),
+    ('Arbeit & Beruf',      '💼', '#8B7355',  4),
+    ('IT-Projekte',         '💻', '#4A5568',  5),
+    ('Reisen & Freude',     '✈️', '#2E86AB',  6),
+    ('Beziehung & Nähe',    '❤️', '#D4697C',  7),
+    ('Zuhause & Ordnung',   '🏡', '#7B9E87',  8),
+    ('Lernen & Kultur',     '📚', '#6B7280',  9),
+    ('Innere Stärke',       '🌸', '#9B7EBD', 10)
+ON CONFLICT (sort_order) DO NOTHING;
+
 INSERT INTO home_rooms (name, icon, sort_order) VALUES
     ('Küche',         '🍳',  1),
     ('Bad',           '🚿',  2),
@@ -94,6 +191,81 @@ INSERT INTO home_rooms (name, icon, sort_order) VALUES
     ('Keller',        '📦', 10),
     ('Auto',          '🚗', 11)
 ON CONFLICT (sort_order) DO NOTHING;
+
+-- ─── Phase 1: Architektur v2 ──────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS areas (
+    id          SERIAL PRIMARY KEY,
+    slug        VARCHAR(50) UNIQUE NOT NULL,
+    name        VARCHAR(100) NOT NULL,
+    icon        VARCHAR(50),
+    color       VARCHAR(30),
+    sort_order  INTEGER DEFAULT 0,
+    has_rooms   BOOLEAN DEFAULT FALSE,
+    active      BOOLEAN DEFAULT TRUE,
+    UNIQUE (sort_order)
+);
+
+INSERT INTO areas (slug, name, icon, color, sort_order, has_rooms) VALUES
+    ('home',       'Zuhause',      '🏡', '#7B9E87',  1, TRUE),
+    ('health',     'Gesundheit',   '💚', '#6B8F71',  2, FALSE),
+    ('goals',      'Ziele',        '🧭', '#4A7FA5',  3, FALSE),
+    ('travel',     'Reisen',       '✈️', '#2E86AB',  4, FALSE),
+    ('learning',   'Lernen',       '📚', '#6B7280',  5, FALSE),
+    ('work',       'Arbeit',       '💼', '#8B7355',  6, FALSE),
+    ('finance',    'Finanzen',     '💶', '#4A5568',  7, FALSE),
+    ('beauty',     'Beauty',       '💄', '#C4A882',  8, FALSE),
+    ('nutrition',  'Ernährung',    '🥗', '#7B9E87',  9, FALSE),
+    ('car',        'Auto',         '🚗', '#6B7280', 10, FALSE),
+    ('wellbeing',  'Wohlbefinden', '🌸', '#9B7EBD', 11, FALSE)
+ON CONFLICT DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS area_categories (
+    id          SERIAL PRIMARY KEY,
+    area_id     INTEGER NOT NULL REFERENCES areas(id) ON DELETE CASCADE,
+    name        VARCHAR(100) NOT NULL,
+    icon        VARCHAR(50),
+    sort_order  INTEGER DEFAULT 0,
+    UNIQUE (area_id, name)
+);
+
+INSERT INTO area_categories (area_id, name, icon, sort_order)
+SELECT a.id, cat.name, cat.icon, cat.sort_order
+FROM areas a,
+(VALUES
+    ('Reinigung',    '🧹', 1),
+    ('Wäsche',       '👕', 2),
+    ('Ordnung',      '📦', 3),
+    ('Wartung',      '🔧', 4),
+    ('Organisation', '📋', 5),
+    ('Einkaufen',    '🛒', 6),
+    ('Dekoration',   '🌺', 7)
+) AS cat(name TEXT, icon TEXT, sort_order INT)
+WHERE a.slug = 'home'
+ON CONFLICT (area_id, name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id              SERIAL PRIMARY KEY,
+    area_id         INTEGER REFERENCES areas(id) ON DELETE SET NULL,
+    category_id     INTEGER REFERENCES area_categories(id) ON DELETE SET NULL,
+    room_id         INTEGER REFERENCES home_rooms(id) ON DELETE SET NULL,
+    title           VARCHAR(300) NOT NULL,
+    notes           TEXT,
+    priority        SMALLINT DEFAULT 2
+                        CHECK (priority BETWEEN 1 AND 3),
+    duration        VARCHAR(10)
+                        CHECK (duration IN ('short', 'medium', 'long')),
+    energy_level    VARCHAR(10)
+                        CHECK (energy_level IN ('low', 'medium', 'high')),
+    frequency_days  INTEGER,
+    last_done       DATE,
+    next_due        DATE,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tasks_area     ON tasks (area_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_next_due ON tasks (next_due) WHERE next_due IS NOT NULL;
 """
 
 MIGRATE_SQL = """
@@ -140,6 +312,30 @@ INSERT INTO home_tasks (room_id, title, frequency_days, priority) VALUES
 ;
 """
 
+BACKUP_HOME_TASKS_SQL = """
+CREATE TABLE IF NOT EXISTS home_tasks_backup AS
+SELECT * FROM home_tasks WHERE 1=0;
+
+INSERT INTO home_tasks_backup
+SELECT * FROM home_tasks
+WHERE NOT EXISTS (SELECT 1 FROM home_tasks_backup LIMIT 1);
+"""
+
+MIGRATE_HOME_TASKS_SQL = """
+INSERT INTO tasks (area_id, room_id, title, notes, priority, frequency_days, last_done, next_due, created_at)
+SELECT
+    (SELECT id FROM areas WHERE slug = 'home'),
+    ht.room_id,
+    ht.title,
+    ht.notes,
+    ht.priority,
+    ht.frequency_days,
+    ht.last_done,
+    ht.next_due,
+    ht.created_at
+FROM home_tasks ht;
+"""
+
 _pool: asyncpg.Pool | None = None
 
 
@@ -166,3 +362,13 @@ async def create_tables() -> None:
         count = await conn.fetchval("SELECT COUNT(*) FROM home_tasks")
         if count == 0:
             await conn.execute(SEED_HOME_TASKS_SQL)
+        # Phase 2: Backup + migrate home_tasks → tasks (runs once, idempotent)
+        home_area_id = await conn.fetchval("SELECT id FROM areas WHERE slug = 'home'")
+        home_tasks_count = await conn.fetchval("SELECT COUNT(*) FROM home_tasks")
+        tasks_home_count = await conn.fetchval(
+            "SELECT COUNT(*) FROM tasks WHERE area_id = $1", home_area_id
+        )
+        if home_area_id and home_tasks_count > 0 and tasks_home_count == 0:
+            async with conn.transaction():
+                await conn.execute(BACKUP_HOME_TASKS_SQL)
+                await conn.execute(MIGRATE_HOME_TASKS_SQL)

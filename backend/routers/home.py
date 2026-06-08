@@ -7,7 +7,8 @@ from auth.jwt import get_current_user
 
 router = APIRouter(prefix="/api/home", tags=["home"])
 
-TODAY = None  # resolved at call time
+# Subquery used in every task query to scope to the Zuhause area
+HOME_AREA = "(SELECT id FROM areas WHERE slug = 'home')"
 
 
 def compute_status(last_done_str: Optional[str], frequency_days: Optional[int]) -> str:
@@ -107,12 +108,14 @@ async def list_tasks(room_id: Optional[int] = None, user=Depends(get_current_use
     async with pool.acquire() as conn:
         if room_id:
             rows = await conn.fetch(
-                f"SELECT {SELECT_TASK} FROM home_tasks WHERE room_id = $1 ORDER BY priority, title",
+                f"SELECT {SELECT_TASK} FROM tasks "
+                f"WHERE area_id = {HOME_AREA} AND room_id = $1 ORDER BY priority, title",
                 room_id,
             )
         else:
             rows = await conn.fetch(
-                f"SELECT {SELECT_TASK} FROM home_tasks ORDER BY priority, next_due NULLS LAST"
+                f"SELECT {SELECT_TASK} FROM tasks "
+                f"WHERE area_id = {HOME_AREA} ORDER BY priority, next_due NULLS LAST"
             )
         return [row_to_task(r) for r in rows]
 
@@ -124,8 +127,8 @@ async def today_tasks(user=Depends(get_current_user)):
     pool = await get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch(
-            f"SELECT {SELECT_TASK} FROM home_tasks "
-            "WHERE next_due IS NOT NULL AND next_due <= $1 "
+            f"SELECT {SELECT_TASK} FROM tasks "
+            f"WHERE area_id = {HOME_AREA} AND next_due IS NOT NULL AND next_due <= $1 "
             "ORDER BY next_due, priority",
             two_days,
         )
@@ -141,8 +144,8 @@ async def create_task(item: TaskIn, user=Depends(get_current_user)):
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            f"INSERT INTO home_tasks (room_id, title, frequency_days, last_done, next_due, priority, notes) "
-            f"VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING {SELECT_TASK}",
+            f"INSERT INTO tasks (area_id, room_id, title, frequency_days, last_done, next_due, priority, notes) "
+            f"VALUES ({HOME_AREA},$1,$2,$3,$4,$5,$6,$7) RETURNING {SELECT_TASK}",
             item.room_id, item.title, item.frequency_days, last_done, next_due, item.priority, item.notes,
         )
         return row_to_task(row)
@@ -154,7 +157,8 @@ async def mark_done(task_id: int, user=Depends(get_current_user)):
     pool = await get_pool()
     async with pool.acquire() as conn:
         existing = await conn.fetchrow(
-            "SELECT id, frequency_days FROM home_tasks WHERE id = $1", task_id
+            f"SELECT id, frequency_days FROM tasks WHERE id = $1 AND area_id = {HOME_AREA}",
+            task_id,
         )
         if not existing:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -162,7 +166,7 @@ async def mark_done(task_id: int, user=Depends(get_current_user)):
         freq = existing["frequency_days"]
         next_due = today + timedelta(days=freq) if freq else None
         row = await conn.fetchrow(
-            f"UPDATE home_tasks SET last_done = $1, next_due = $2 WHERE id = $3 "
+            f"UPDATE tasks SET last_done = $1, next_due = $2 WHERE id = $3 "
             f"RETURNING {SELECT_TASK}",
             today, next_due, task_id,
         )
@@ -174,7 +178,8 @@ async def patch_task(task_id: int, patch: TaskPatch, user=Depends(get_current_us
     pool = await get_pool()
     async with pool.acquire() as conn:
         existing = await conn.fetchrow(
-            "SELECT id, frequency_days FROM home_tasks WHERE id = $1", task_id
+            f"SELECT id, frequency_days FROM tasks WHERE id = $1 AND area_id = {HOME_AREA}",
+            task_id,
         )
         if not existing:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -207,7 +212,7 @@ async def patch_task(task_id: int, patch: TaskPatch, user=Depends(get_current_us
         set_clauses = ", ".join(f"{k} = ${i+2}" for i, k in enumerate(updates.keys()))
         values = list(updates.values())
         row = await conn.fetchrow(
-            f"UPDATE home_tasks SET {set_clauses} WHERE id = $1 RETURNING {SELECT_TASK}",
+            f"UPDATE tasks SET {set_clauses} WHERE id = $1 RETURNING {SELECT_TASK}",
             task_id, *values,
         )
         return row_to_task(row)
@@ -217,7 +222,10 @@ async def patch_task(task_id: int, patch: TaskPatch, user=Depends(get_current_us
 async def delete_task(task_id: int, user=Depends(get_current_user)):
     pool = await get_pool()
     async with pool.acquire() as conn:
-        result = await conn.execute("DELETE FROM home_tasks WHERE id = $1", task_id)
+        result = await conn.execute(
+            f"DELETE FROM tasks WHERE id = $1 AND area_id = {HOME_AREA}",
+            task_id,
+        )
         if result == "DELETE 0":
             raise HTTPException(status_code=404, detail="Task not found")
     return {"ok": True}
@@ -228,6 +236,7 @@ async def overdue_count(user=Depends(get_current_user)):
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT COUNT(*) AS count FROM home_tasks WHERE next_due < CURRENT_DATE"
+            f"SELECT COUNT(*) AS count FROM tasks "
+            f"WHERE area_id = {HOME_AREA} AND next_due < CURRENT_DATE"
         )
         return {"count": row["count"]}
