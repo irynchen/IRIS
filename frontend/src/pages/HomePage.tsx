@@ -16,6 +16,7 @@ export default function HomePage() {
   const [editTask, setEditTask] = useState<HomeTask | undefined>()
   const [selectedRoom, setSelectedRoom] = useState<HomeRoom | null>(null)
   const [formDefaultRoom, setFormDefaultRoom] = useState<number | undefined>()
+  const [filterCategory, setFilterCategory] = useState<number | null>(null)
 
   useEffect(() => {
     load()
@@ -70,7 +71,16 @@ export default function HomePage() {
     }
   }
 
-  const selectedTasks = selectedRoom ? (tasksByRoom[selectedRoom.id] ?? []) : []
+  const filteredByRoom = filterCategory
+    ? Object.fromEntries(
+        Object.entries(tasksByRoom).map(([id, tasks]) => [
+          id,
+          tasks.filter((t) => t.category_id === filterCategory),
+        ])
+      )
+    : tasksByRoom
+
+  const selectedTasks = selectedRoom ? (filteredByRoom[selectedRoom.id] ?? []) : []
 
   return (
     <div className="flex flex-col min-h-full">
@@ -100,6 +110,35 @@ export default function HomePage() {
           <>
             <TodayBlock tasks={todayTasks} onDone={markDone} />
 
+            {/* Kategorien-Filter */}
+            {categories.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 mb-4 scrollbar-hide">
+                <button
+                  onClick={() => setFilterCategory(null)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    filterCategory === null
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : 'bg-[var(--color-muted)] text-[var(--color-text-muted)]'
+                  }`}
+                >
+                  Alle
+                </button>
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setFilterCategory(filterCategory === c.id ? null : c.id)}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      filterCategory === c.id
+                        ? 'bg-[var(--color-primary)] text-white'
+                        : 'bg-[var(--color-muted)] text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {c.icon} {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {rooms.length === 0 ? (
               <EmptyState icon="🏠" message="Keine Räume vorhanden" />
             ) : (
@@ -108,7 +147,7 @@ export default function HomePage() {
                   <RoomCard
                     key={room.id}
                     room={room}
-                    tasks={tasksByRoom[room.id] ?? []}
+                    tasks={filteredByRoom[room.id] ?? []}
                     onClick={() => setSelectedRoom(room)}
                   />
                 ))}
