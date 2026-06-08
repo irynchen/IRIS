@@ -232,6 +232,61 @@ FROM areas a,
 WHERE a.slug = 'home'
 ON CONFLICT (area_id, name) DO NOTHING;
 
+INSERT INTO area_categories (area_id, name, icon, sort_order)
+SELECT a.id, cat.name, cat.icon, cat.sort_order
+FROM areas a,
+(VALUES
+    ('Gesichtspflege', '🧴', 1),
+    ('Haare',          '💇', 2),
+    ('Nägel',          '💅', 3),
+    ('Körperpflege',   '🛁', 4),
+    ('Kosmetik',       '💄', 5),
+    ('Friseur',        '✂️', 6)
+) AS cat(name, icon, sort_order)
+WHERE a.slug = 'beauty'
+ON CONFLICT (area_id, name) DO NOTHING;
+
+INSERT INTO area_categories (area_id, name, icon, sort_order)
+SELECT a.id, cat.name, cat.icon, cat.sort_order
+FROM areas a,
+(VALUES
+    ('Bücher',        '📚', 1),
+    ('Online-Kurse',  '💻', 2),
+    ('Sprachen',      '🌍', 3),
+    ('Videos',        '🎬', 4),
+    ('Podcasts',      '🎧', 5),
+    ('Sonstiges',     '📝', 6)
+) AS cat(name, icon, sort_order)
+WHERE a.slug = 'learning'
+ON CONFLICT (area_id, name) DO NOTHING;
+
+INSERT INTO area_categories (area_id, name, icon, sort_order)
+SELECT a.id, cat.name, cat.icon, cat.sort_order
+FROM areas a,
+(VALUES
+    ('Wartung',          '🔧', 1),
+    ('Reinigung',        '🧼', 2),
+    ('TÜV & Behörden',   '📋', 3),
+    ('Versicherung',     '📄', 4),
+    ('Reparatur',        '🛠', 5)
+) AS cat(name, icon, sort_order)
+WHERE a.slug = 'car'
+ON CONFLICT (area_id, name) DO NOTHING;
+
+INSERT INTO area_categories (area_id, name, icon, sort_order)
+SELECT a.id, cat.name, cat.icon, cat.sort_order
+FROM areas a,
+(VALUES
+    ('Ausgaben',     '💸', 1),
+    ('Einnahmen',    '💰', 2),
+    ('Sparen',       '🏦', 3),
+    ('Versicherung', '📄', 4),
+    ('Steuern',      '🧾', 5),
+    ('Investitionen','📈', 6)
+) AS cat(name, icon, sort_order)
+WHERE a.slug = 'finance'
+ON CONFLICT (area_id, name) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS tasks (
     id              SERIAL PRIMARY KEY,
     area_id         INTEGER REFERENCES areas(id) ON DELETE SET NULL,
