@@ -206,7 +206,7 @@ export default function HomePage() {
           <p className="text-red-400 text-sm text-center mt-10">{error}</p>
         ) : (
           <>
-            <TodayBlock tasks={urgentTasks} onDone={markDone} />
+            <TodayBlock tasks={urgentTasks} rooms={rooms} onDone={markDone} />
 
             {rooms.length === 0 ? (
               <EmptyState icon="🏠" message="Keine Räume vorhanden" />
