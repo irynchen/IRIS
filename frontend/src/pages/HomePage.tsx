@@ -9,16 +9,42 @@ import SkeletonCard from '../components/ui/SkeletonCard'
 import EmptyState from '../components/ui/EmptyState'
 import BottomSheet from '../components/ui/BottomSheet'
 
+const SELECT_CLS =
+  'flex-1 min-w-[calc(33%-6px)] text-xs py-1.5 px-2 rounded-lg ' +
+  'border border-[var(--color-muted)] bg-[var(--color-surface)] ' +
+  'text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] ' +
+  'appearance-none cursor-pointer'
+
 export default function HomePage() {
   const { rooms, categories, tasksByRoom, loading, error, load, markDone, add, update, remove } =
     useHomeStore()
-  const [showForm, setShowForm] = useState(false)
-  const [editTask, setEditTask] = useState<HomeTask | undefined>()
-  const [selectedRoom, setSelectedRoom] = useState<HomeRoom | null>(null)
-  const [formDefaultRoom, setFormDefaultRoom] = useState<number | undefined>()
-  const [filterCategory, setFilterCategory] = useState<number | null>(null)
+
+  const [showForm,       setShowForm]       = useState(false)
+  const [editTask,       setEditTask]       = useState<HomeTask | undefined>()
+  const [selectedRoom,   setSelectedRoom]   = useState<HomeRoom | null>(null)
+  const [formDefaultRoom,setFormDefaultRoom]= useState<number | undefined>()
+
+  // Filters
+  const [fCategory, setFCategory] = useState<number | null>(null)
+  const [fPriority, setFPriority] = useState<number | null>(null)
+  const [fDuration, setFDuration] = useState<string | null>(null)
+  const [fEnergy,   setFEnergy]   = useState<string | null>(null)
+  const [fRoom,     setFRoom]     = useState<number | null>(null)
+
+  const hasFilter = fCategory || fPriority || fDuration || fEnergy || fRoom
 
   useEffect(() => { load() }, [])
+
+  function applyFilters(tasks: HomeTask[]): HomeTask[] {
+    return tasks.filter((t) => {
+      if (fCategory && t.category_id  !== fCategory) return false
+      if (fPriority && t.priority     !== fPriority) return false
+      if (fDuration && t.duration     !== fDuration) return false
+      if (fEnergy   && t.energy_level !== fEnergy)   return false
+      if (fRoom     && t.room_id      !== fRoom)      return false
+      return true
+    })
+  }
 
   function openAddForRoom(room: HomeRoom) {
     setEditTask(undefined)
@@ -29,7 +55,7 @@ export default function HomePage() {
   function openEdit(task: HomeTask) {
     setEditTask(task)
     setFormDefaultRoom(task.room_id)
-    setSelectedRoom(null)  // close room detail sheet
+    setSelectedRoom(null)
     setShowForm(true)
   }
 
@@ -68,66 +94,107 @@ export default function HomePage() {
     }
   }
 
-  // Derive today tasks from tasksByRoom — always in sync, no separate API call needed
-  const allTasks = Object.values(tasksByRoom).flat()
-  const urgentTasks = allTasks.filter((t) => t.status === 'overdue' || t.status === 'due_soon')
-  const filteredTodayTasks = filterCategory
-    ? urgentTasks.filter((t) => t.category_id === filterCategory)
-    : urgentTasks
+  // Derived urgent tasks — always in sync with tasksByRoom
+  const allTasks    = Object.values(tasksByRoom).flat()
+  const urgentTasks = applyFilters(allTasks.filter((t) => t.status === 'overdue' || t.status === 'due_soon'))
 
-  const filteredByRoom = filterCategory
-    ? Object.fromEntries(
-        Object.entries(tasksByRoom).map(([id, tasks]) => [
-          id,
-          tasks.filter((t) => t.category_id === filterCategory),
-        ])
-      )
-    : tasksByRoom
+  // Filtered room tasks
+  const filteredByRoom = Object.fromEntries(
+    Object.entries(tasksByRoom)
+      .filter(([roomId]) => !fRoom || Number(roomId) === fRoom)
+      .map(([id, tasks]) => [id, applyFilters(tasks)])
+  )
 
-  const selectedTasks = selectedRoom ? (filteredByRoom[selectedRoom.id] ?? []) : []
+  const selectedTasks = selectedRoom ? (applyFilters(tasksByRoom[selectedRoom.id] ?? [])) : []
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Header */}
+      {/* Sticky Header */}
       <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 pt-4 pb-3">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-2xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
             Zuhause
           </h1>
-          <button
-            onClick={() => { setEditTask(undefined); setFormDefaultRoom(rooms[0]?.id); setShowForm(true) }}
-            className="bg-[var(--color-primary)] text-white rounded-full w-9 h-9 flex items-center justify-center text-lg font-light hover:opacity-90 transition-opacity"
-          >
-            +
-          </button>
-        </div>
-        {categories.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-hide">
-            <button
-              onClick={() => setFilterCategory(null)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                filterCategory === null
-                  ? 'bg-[var(--color-primary)] text-white'
-                  : 'bg-[var(--color-muted)] text-[var(--color-text-muted)]'
-              }`}
-            >
-              Alle
-            </button>
-            {categories.map((c) => (
+          <div className="flex items-center gap-2">
+            {hasFilter && (
               <button
-                key={c.id}
-                onClick={() => setFilterCategory(filterCategory === c.id ? null : c.id)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  filterCategory === c.id
-                    ? 'bg-[var(--color-primary)] text-white'
-                    : 'bg-[var(--color-muted)] text-[var(--color-text-muted)]'
-                }`}
+                onClick={() => { setFCategory(null); setFPriority(null); setFDuration(null); setFEnergy(null); setFRoom(null) }}
+                className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
               >
-                {c.icon} {c.name}
+                ✕ Filter
               </button>
-            ))}
+            )}
+            <button
+              onClick={() => { setEditTask(undefined); setFormDefaultRoom(rooms[0]?.id); setShowForm(true) }}
+              className="bg-[var(--color-primary)] text-white rounded-full w-9 h-9 flex items-center justify-center text-lg font-light hover:opacity-90 transition-opacity"
+            >
+              +
+            </button>
           </div>
-        )}
+        </div>
+
+        {/* Filter-Dropdowns */}
+        <div className="flex flex-wrap gap-1.5">
+          {/* Kategorie */}
+          <select
+            className={SELECT_CLS}
+            value={fCategory ?? ''}
+            onChange={(e) => setFCategory(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">Kategorie</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+            ))}
+          </select>
+
+          {/* Raum */}
+          <select
+            className={SELECT_CLS}
+            value={fRoom ?? ''}
+            onChange={(e) => setFRoom(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">Raum</option>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>{r.icon} {r.name}</option>
+            ))}
+          </select>
+
+          {/* Priorität */}
+          <select
+            className={SELECT_CLS}
+            value={fPriority ?? ''}
+            onChange={(e) => setFPriority(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">Priorität</option>
+            <option value="3">🔴 Hoch</option>
+            <option value="2">🟡 Mittel</option>
+            <option value="1">🟢 Niedrig</option>
+          </select>
+
+          {/* Dauer */}
+          <select
+            className={SELECT_CLS}
+            value={fDuration ?? ''}
+            onChange={(e) => setFDuration(e.target.value || null)}
+          >
+            <option value="">Dauer</option>
+            <option value="short">⚡ Kurz (15 min)</option>
+            <option value="medium">🕐 Mittel (1 Std)</option>
+            <option value="long">⏳ Lang (2 Std)</option>
+          </select>
+
+          {/* Energiebedarf */}
+          <select
+            className={SELECT_CLS}
+            value={fEnergy ?? ''}
+            onChange={(e) => setFEnergy(e.target.value || null)}
+          >
+            <option value="">Energie</option>
+            <option value="low">🌿 Niedrig</option>
+            <option value="medium">💛 Mittel</option>
+            <option value="high">🔥 Hoch</option>
+          </select>
+        </div>
       </div>
 
       <div className="flex-1 p-4 max-w-2xl mx-auto w-full">
@@ -139,20 +206,22 @@ export default function HomePage() {
           <p className="text-red-400 text-sm text-center mt-10">{error}</p>
         ) : (
           <>
-            <TodayBlock tasks={filteredTodayTasks} onDone={markDone} />
+            <TodayBlock tasks={urgentTasks} onDone={markDone} />
 
             {rooms.length === 0 ? (
               <EmptyState icon="🏠" message="Keine Räume vorhanden" />
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {rooms.map((room) => (
-                  <RoomCard
-                    key={room.id}
-                    room={room}
-                    tasks={filteredByRoom[room.id] ?? []}
-                    onClick={() => setSelectedRoom(room)}
-                  />
-                ))}
+                {rooms
+                  .filter((r) => !fRoom || r.id === fRoom)
+                  .map((room) => (
+                    <RoomCard
+                      key={room.id}
+                      room={room}
+                      tasks={filteredByRoom[room.id] ?? []}
+                      onClick={() => setSelectedRoom(room)}
+                    />
+                  ))}
               </div>
             )}
           </>
@@ -183,7 +252,7 @@ export default function HomePage() {
               </div>
             )}
             <button
-              onClick={() => { openAddForRoom(selectedRoom) }}
+              onClick={() => openAddForRoom(selectedRoom)}
               className="mt-4 w-full py-2.5 border-2 border-dashed border-[var(--color-muted)] rounded-xl text-sm text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
             >
               + Aufgabe hinzufügen
