@@ -153,18 +153,6 @@ CREATE TABLE IF NOT EXISTS home_rooms (
     UNIQUE (sort_order)
 );
 
-CREATE TABLE IF NOT EXISTS home_tasks (
-    id SERIAL PRIMARY KEY,
-    room_id INTEGER REFERENCES home_rooms(id) ON DELETE CASCADE,
-    title VARCHAR(200) NOT NULL,
-    frequency_days INTEGER,
-    last_done DATE,
-    next_due DATE,
-    priority INTEGER DEFAULT 2,
-    notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
 INSERT INTO goal_areas (name, icon, color, sort_order) VALUES
     ('Gesundheit & Körper', '💚', '#6B8F71',  1),
     ('Schönheit & Pflege',  '💄', '#C4A882',  2),
@@ -295,47 +283,6 @@ END
 $$;
 """
 
-SEED_HOME_TASKS_SQL = """
-INSERT INTO home_tasks (room_id, title, frequency_days, priority) VALUES
-    ((SELECT id FROM home_rooms WHERE sort_order=1 ORDER BY id LIMIT 1), 'Arbeitsplatte abwischen', 1, 1),
-    ((SELECT id FROM home_rooms WHERE sort_order=1 ORDER BY id LIMIT 1), 'Herd reinigen', 7, 2),
-    ((SELECT id FROM home_rooms WHERE sort_order=1 ORDER BY id LIMIT 1), 'Kühlschrank aufräumen', 14, 3),
-    ((SELECT id FROM home_rooms WHERE sort_order=2 ORDER BY id LIMIT 1), 'WC reinigen', 7, 1),
-    ((SELECT id FROM home_rooms WHERE sort_order=2 ORDER BY id LIMIT 1), 'Dusche reinigen', 7, 1),
-    ((SELECT id FROM home_rooms WHERE sort_order=2 ORDER BY id LIMIT 1), 'Spiegel putzen', 14, 2),
-    ((SELECT id FROM home_rooms WHERE sort_order=3 ORDER BY id LIMIT 1), 'Bettzeug wechseln', 14, 1),
-    ((SELECT id FROM home_rooms WHERE sort_order=3 ORDER BY id LIMIT 1), 'Stauben', 14, 2),
-    ((SELECT id FROM home_rooms WHERE sort_order=4 ORDER BY id LIMIT 1), 'Saugen', 7, 1),
-    ((SELECT id FROM home_rooms WHERE sort_order=4 ORDER BY id LIMIT 1), 'Stauben', 14, 2),
-    ((SELECT id FROM home_rooms WHERE sort_order=5 ORDER BY id LIMIT 1), 'Boden wischen', 7, 2),
-    ((SELECT id FROM home_rooms WHERE sort_order=6 ORDER BY id LIMIT 1), 'Schreibtisch aufräumen', 7, 2)
-;
-"""
-
-BACKUP_HOME_TASKS_SQL = """
-CREATE TABLE IF NOT EXISTS home_tasks_backup AS
-SELECT * FROM home_tasks WHERE 1=0;
-
-INSERT INTO home_tasks_backup
-SELECT * FROM home_tasks
-WHERE NOT EXISTS (SELECT 1 FROM home_tasks_backup LIMIT 1);
-"""
-
-MIGRATE_HOME_TASKS_SQL = """
-INSERT INTO tasks (area_id, room_id, title, notes, priority, frequency_days, last_done, next_due, created_at)
-SELECT
-    (SELECT id FROM areas WHERE slug = 'home'),
-    ht.room_id,
-    ht.title,
-    ht.notes,
-    ht.priority,
-    ht.frequency_days,
-    ht.last_done,
-    ht.next_due,
-    ht.created_at
-FROM home_tasks ht;
-"""
-
 _pool: asyncpg.Pool | None = None
 
 
@@ -359,16 +306,3 @@ async def create_tables() -> None:
     async with pool.acquire() as conn:
         await conn.execute(CREATE_TABLES_SQL)
         await conn.execute(MIGRATE_SQL)
-        count = await conn.fetchval("SELECT COUNT(*) FROM home_tasks")
-        if count == 0:
-            await conn.execute(SEED_HOME_TASKS_SQL)
-        # Phase 2: Backup + migrate home_tasks → tasks (runs once, idempotent)
-        home_area_id = await conn.fetchval("SELECT id FROM areas WHERE slug = 'home'")
-        home_tasks_count = await conn.fetchval("SELECT COUNT(*) FROM home_tasks")
-        tasks_home_count = await conn.fetchval(
-            "SELECT COUNT(*) FROM tasks WHERE area_id = $1", home_area_id
-        )
-        if home_area_id and home_tasks_count > 0 and tasks_home_count == 0:
-            async with conn.transaction():
-                await conn.execute(BACKUP_HOME_TASKS_SQL)
-                await conn.execute(MIGRATE_HOME_TASKS_SQL)
