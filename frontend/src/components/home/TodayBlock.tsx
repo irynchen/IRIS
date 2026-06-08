@@ -4,6 +4,7 @@ interface Props {
   tasks: HomeTask[]
   rooms: HomeRoom[]
   onDone: (taskId: number, roomId: number) => void
+  onEdit: (task: HomeTask) => void
 }
 
 function formatDate(d: string | null): string {
@@ -11,7 +12,7 @@ function formatDate(d: string | null): string {
   return new Date(d + 'T00:00:00').toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })
 }
 
-export default function TodayBlock({ tasks, rooms, onDone }: Props) {
+export default function TodayBlock({ tasks, rooms, onDone, onEdit }: Props) {
   if (tasks.length === 0) return null
 
   const roomMap = new Map(rooms.map((r) => [r.id, r]))
@@ -41,6 +42,13 @@ export default function TodayBlock({ tasks, rooms, onDone }: Props) {
                     : 'kein Fälligkeitsdatum'}
                 </p>
               </div>
+              <button
+                onClick={() => onEdit(task)}
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] w-7 h-7 flex items-center justify-center text-sm flex-shrink-0 transition-colors"
+                title="Bearbeiten"
+              >
+                ✏️
+              </button>
               <button
                 onClick={() => onDone(task.id, task.room_id)}
                 className="text-xs px-2.5 py-1.5 bg-amber-500 text-white rounded-lg font-medium flex-shrink-0 hover:opacity-80 transition-opacity"
