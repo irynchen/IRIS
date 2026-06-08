@@ -74,6 +74,7 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           ...get().tasksByRoom,
           [roomId]: get().tasksByRoom[roomId].map((t) => t.id === taskId ? updated : t),
         },
+        todayTasks: get().todayTasks.filter((t) => t.id !== taskId),
       })
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50)
     } catch {
@@ -101,6 +102,7 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           ...get().tasksByRoom,
           [roomId]: prev.map((t) => t.id === taskId ? updated : t),
         },
+        todayTasks: get().todayTasks.map((t) => t.id === taskId ? updated : t),
       })
     } catch {
       // leave state as-is on error
