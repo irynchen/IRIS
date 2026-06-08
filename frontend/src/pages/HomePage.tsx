@@ -117,14 +117,6 @@ export default function HomePage() {
             Zuhause
           </h1>
           <div className="flex items-center gap-2">
-            {hasFilter && (
-              <button
-                onClick={() => { setFCategory(null); setFPriority(null); setFDuration(null); setFEnergy(null); setFRoom(null) }}
-                className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
-              >
-                ✕ Filter
-              </button>
-            )}
             <button
               onClick={() => { setEditTask(undefined); setFormDefaultRoom(rooms[0]?.id); setShowForm(true) }}
               className="bg-[var(--color-primary)] text-white rounded-full w-9 h-9 flex items-center justify-center text-lg font-light hover:opacity-90 transition-opacity"
@@ -135,7 +127,7 @@ export default function HomePage() {
         </div>
 
         {/* Filter-Dropdowns */}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 items-center">
           {/* Kategorie */}
           <select
             className={SELECT_CLS}
@@ -195,6 +187,19 @@ export default function HomePage() {
             <option value="medium">💛 Mittel</option>
             <option value="high">🔥 Hoch</option>
           </select>
+
+          {/* Reset */}
+          <button
+            onClick={() => { setFCategory(null); setFPriority(null); setFDuration(null); setFEnergy(null); setFRoom(null) }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+              hasFilter
+                ? 'border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white'
+                : 'border-[var(--color-muted)] text-[var(--color-text-muted)] opacity-40 cursor-default'
+            }`}
+            disabled={!hasFilter}
+          >
+            ↺ Zurücksetzen
+          </button>
         </div>
       </div>
 
