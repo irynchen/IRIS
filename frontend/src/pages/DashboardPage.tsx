@@ -24,6 +24,7 @@ const MODULE_CARDS = [
   { icon: '☀️', label: 'Mein Tag', to: '/day' },
   { icon: '🏡', label: 'Zuhause', to: '/home' },
   { icon: '💚', label: 'Gesundheit', to: '/health' },
+  { icon: '🧭', label: 'Life Compass', to: '/goals' },
   { icon: '✈️', label: 'Reisen', to: '/travel' },
 ]
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useHealthStore } from '../store/healthStore'
 import TodayForm from '../components/health/TodayForm'
 import HistoryList from '../components/health/HistoryList'
@@ -17,6 +18,7 @@ const TABS = [
 ]
 
 export default function HealthPage() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<string>('today')
   const { fetchToday, fetchInsights, stats, fetchStats, insights } = useHealthStore()
 
@@ -70,6 +72,26 @@ export default function HealthPage() {
           )}
         </div>
       )}
+
+      {/* Subpage links */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => navigate('/health/doctors')}
+          className="flex-1 flex items-center gap-2 bg-[var(--color-surface)] shadow-[var(--shadow-card)] rounded-xl px-3 py-2.5 hover:opacity-80 transition-opacity"
+        >
+          <span className="text-lg">🩺</span>
+          <span className="text-sm font-medium">Meine Ärzte</span>
+          <span className="ml-auto text-[var(--color-text-muted)] text-xs">›</span>
+        </button>
+        <button
+          onClick={() => navigate('/health/medications')}
+          className="flex-1 flex items-center gap-2 bg-[var(--color-surface)] shadow-[var(--shadow-card)] rounded-xl px-3 py-2.5 hover:opacity-80 transition-opacity"
+        >
+          <span className="text-lg">💊</span>
+          <span className="text-sm font-medium">Medikamente</span>
+          <span className="ml-auto text-[var(--color-text-muted)] text-xs">›</span>
+        </button>
+      </div>
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-5 bg-[var(--color-muted)] rounded-xl p-1">

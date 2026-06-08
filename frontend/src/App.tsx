@@ -6,6 +6,9 @@ import DashboardPage from './pages/DashboardPage'
 import DayPage from './pages/DayPage'
 import HomePage from './pages/HomePage'
 import HealthPage from './pages/HealthPage'
+import DoctorsPage from './pages/DoctorsPage'
+import MedicationsPage from './pages/MedicationsPage'
+import GoalsPage from './pages/GoalsPage'
 
 function PlaceholderPage({ title, emoji }: { title: string; emoji: string }) {
   return (
@@ -32,6 +35,9 @@ function ProtectedRoutes() {
         <Route path="/day" element={<DayPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/health" element={<HealthPage />} />
+        <Route path="/health/doctors" element={<DoctorsPage />} />
+        <Route path="/health/medications" element={<MedicationsPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
         <Route path="/travel" element={<PlaceholderPage title="Reisen" emoji="✈️" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

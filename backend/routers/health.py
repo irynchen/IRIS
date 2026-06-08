@@ -542,7 +542,8 @@ async def chart_bp(days: int = Query(30), user=Depends(get_current_user)):
         rows = await conn.fetch(
             "SELECT date::text AS date, bp_morning_systolic, bp_morning_diastolic, "
             "bp_evening_systolic, bp_evening_diastolic FROM health_records "
-            "WHERE date >= $1 ORDER BY date ASC",
+            "WHERE date >= $1 AND (bp_morning_systolic IS NOT NULL OR bp_evening_systolic IS NOT NULL) "
+            "ORDER BY date ASC",
             datetime.date.fromisoformat(since)
         )
     return [dict(r) for r in rows]

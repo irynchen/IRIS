@@ -6,7 +6,7 @@ const NAV_ITEMS = [
   { to: '/day', icon: '☀️', label: 'Mein Tag' },
   { to: '/home', icon: '🏡', label: 'Zuhause' },
   { to: '/health', icon: '💚', label: 'Gesundheit' },
-  { to: '/travel', icon: '✈️', label: 'Reisen' },
+  { to: '/goals', icon: '🧭', label: 'Ziele' },
 ]
 
 export default function BottomNav() {

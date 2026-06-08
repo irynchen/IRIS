@@ -1,10 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useHealthStore } from '../../store/healthStore'
+import { HealthRecord } from '../../api/health'
 import HistoryCard from './HistoryCard'
+import EditRecordModal from './EditRecordModal'
 import LoadingSpinner from '../ui/LoadingSpinner'
 
 export default function HistoryList() {
   const { records, isLoading, fetchRecords } = useHealthStore()
+  const [editing, setEditing] = useState<HealthRecord | null>(null)
 
   useEffect(() => {
     const to = new Date().toISOString().slice(0, 10)
@@ -24,10 +27,16 @@ export default function HistoryList() {
   }
 
   return (
-    <div className="space-y-3">
-      {records.map(r => (
-        <HistoryCard key={r.date} record={r} />
-      ))}
-    </div>
+    <>
+      <div className="space-y-3">
+        {records.map(r => (
+          <HistoryCard key={r.date} record={r} onClick={() => setEditing(r)} />
+        ))}
+      </div>
+
+      {editing && (
+        <EditRecordModal record={editing} onClose={() => setEditing(null)} />
+      )}
+    </>
   )
 }

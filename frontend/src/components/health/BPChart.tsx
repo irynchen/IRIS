@@ -46,8 +46,10 @@ export default function BPChart() {
           <ReferenceArea y1={130} y2={140} fill="#C4A882" fillOpacity={0.1} />
           {/* High zone */}
           <ReferenceArea y1={140} y2={180} fill="#ef4444" fillOpacity={0.07} />
-          <Line type="monotone" dataKey="bp_morning_systolic" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} name="Systole (morgens)" />
-          <Line type="monotone" dataKey="bp_morning_diastolic" stroke="#4A7FA5" strokeWidth={2} dot={{ r: 3 }} name="Diastole (morgens)" />
+          <Line type="monotone" dataKey="bp_morning_systolic" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} name="Systole (m)" connectNulls={false} />
+          <Line type="monotone" dataKey="bp_morning_diastolic" stroke="#4A7FA5" strokeWidth={2} dot={{ r: 3 }} name="Diastole (m)" connectNulls={false} />
+          <Line type="monotone" dataKey="bp_evening_systolic" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} name="Systole (a)" connectNulls={false} />
+          <Line type="monotone" dataKey="bp_evening_diastolic" stroke="#4A7FA5" strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} name="Diastole (a)" connectNulls={false} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
         </ComposedChart>
       </ResponsiveContainer>

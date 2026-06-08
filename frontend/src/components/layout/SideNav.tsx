@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: '/day', icon: '☀️', label: 'Mein Tag' },
   { to: '/home', icon: '🏡', label: 'Zuhause' },
   { to: '/health', icon: '💚', label: 'Gesundheit' },
+  { to: '/goals', icon: '🧭', label: 'Ziele' },
   { to: '/travel', icon: '✈️', label: 'Reisen' },
 ]
 
