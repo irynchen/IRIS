@@ -10,7 +10,7 @@ import EmptyState from '../components/ui/EmptyState'
 import BottomSheet from '../components/ui/BottomSheet'
 
 export default function HomePage() {
-  const { rooms, tasksByRoom, todayTasks, loading, error, load, loadToday, markDone, add, update, remove } =
+  const { rooms, categories, tasksByRoom, todayTasks, loading, error, load, loadToday, markDone, add, update, remove } =
     useHomeStore()
   const [showForm, setShowForm] = useState(false)
   const [editTask, setEditTask] = useState<HomeTask | undefined>()
@@ -41,31 +41,31 @@ export default function HomePage() {
     frequency_days: string
     last_done: string
     priority: number
+    category_id: number | null
+    duration: string | null
+    energy_level: string | null
   }) {
     if (editTask) {
-      // edit mode — PATCH existing task
       await update(editTask.id, editTask.room_id, {
         title: form.title.trim(),
         frequency_days: form.frequency_days ? Number(form.frequency_days) : null,
         last_done: form.last_done || null,
-        // next_due will be recalculated server-side via existing patch logic
-        next_due: form.last_done && form.frequency_days
-          ? new Date(
-              new Date(form.last_done + 'T00:00:00').getTime() +
-              Number(form.frequency_days) * 86400000
-            ).toISOString().slice(0, 10)
-          : null,
         priority: form.priority,
+        category_id: form.category_id,
+        duration: form.duration,
+        energy_level: form.energy_level,
       })
       setEditTask(undefined)
     } else {
-      // create mode
       await add({
         room_id: form.room_id,
         title: form.title.trim(),
         frequency_days: form.frequency_days ? Number(form.frequency_days) : null,
         last_done: form.last_done || null,
         priority: form.priority,
+        category_id: form.category_id,
+        duration: form.duration,
+        energy_level: form.energy_level,
       })
     }
   }
@@ -157,6 +157,7 @@ export default function HomePage() {
         onClose={() => { setShowForm(false); setEditTask(undefined) }}
         onSubmit={handleFormSubmit}
         rooms={rooms}
+        categories={categories}
         defaultRoomId={formDefaultRoom}
         editTask={editTask}
       />

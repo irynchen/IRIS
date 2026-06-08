@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import {
-  HomeRoom, HomeTask,
-  fetchRooms, fetchTasks, fetchTodayTasks,
+  HomeRoom, HomeTask, HomeCategory,
+  fetchRooms, fetchTasks, fetchTodayTasks, fetchCategories,
   markDone as apiMarkDone, createTask as apiCreate, patchTask as apiPatch, deleteTask as apiDelete,
 } from '../api/home'
 
 interface HomeState {
   rooms: HomeRoom[]
+  categories: HomeCategory[]
   tasksByRoom: Record<number, HomeTask[]>
   todayTasks: HomeTask[]
   loading: boolean
@@ -21,6 +22,7 @@ interface HomeState {
 
 export const useHomeStore = create<HomeState>((set, get) => ({
   rooms: [],
+  categories: [],
   tasksByRoom: {},
   todayTasks: [],
   loading: false,
@@ -29,13 +31,17 @@ export const useHomeStore = create<HomeState>((set, get) => ({
   async load() {
     set({ loading: true, error: null })
     try {
-      const [rooms, tasks] = await Promise.all([fetchRooms(), fetchTasks()])
+      const [rooms, tasks, categories] = await Promise.all([
+        fetchRooms(),
+        fetchTasks(),
+        fetchCategories(),
+      ])
       const byRoom: Record<number, HomeTask[]> = {}
       for (const t of tasks) {
         if (!byRoom[t.room_id]) byRoom[t.room_id] = []
         byRoom[t.room_id].push(t)
       }
-      set({ rooms, tasksByRoom: byRoom, loading: false })
+      set({ rooms, tasksByRoom: byRoom, categories, loading: false })
     } catch {
       set({ error: 'Fehler beim Laden', loading: false })
     }
@@ -52,7 +58,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
 
   async markDone(taskId, roomId) {
     const prev = get().tasksByRoom[roomId] ?? []
-    // optimistic: update status + last_done immediately
     const today = new Date().toISOString().slice(0, 10)
     set({
       tasksByRoom: {

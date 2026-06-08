@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { HomeRoom, HomeTask } from '../../api/home'
+import { HomeRoom, HomeTask, HomeCategory } from '../../api/home'
 import BottomSheet from '../ui/BottomSheet'
 
 interface FormData {
@@ -8,6 +8,9 @@ interface FormData {
   frequency_days: string
   last_done: string
   priority: number
+  category_id: number | null
+  duration: string | null
+  energy_level: string | null
 }
 
 interface Props {
@@ -15,17 +18,38 @@ interface Props {
   onClose: () => void
   onSubmit: (data: FormData) => Promise<void>
   rooms: HomeRoom[]
+  categories: HomeCategory[]
   defaultRoomId?: number
-  editTask?: HomeTask   // if set → edit mode
+  editTask?: HomeTask
 }
 
 const FREQ_OPTIONS = [
-  { label: 'Kein', value: '' },
-  { label: 'Täglich', value: '1' },
-  { label: '3 Tage', value: '3' },
-  { label: '1 Woche', value: '7' },
+  { label: 'Kein',     value: '' },
+  { label: 'Täglich',  value: '1' },
+  { label: '3 Tage',   value: '3' },
+  { label: '1 Woche',  value: '7' },
   { label: '2 Wochen', value: '14' },
-  { label: '1 Monat', value: '30' },
+  { label: '1 Monat',  value: '30' },
+  { label: '3 Monate', value: '90' },
+  { label: '6 Monate', value: '180' },
+]
+
+const PRIORITY_OPTIONS = [
+  { label: 'Niedrig', value: 1, color: '#6B8F71', bg: '#6B8F7120' },
+  { label: 'Mittel',  value: 2, color: '#f59e0b', bg: '#f59e0b20' },
+  { label: 'Hoch',    value: 3, color: '#ef4444', bg: '#ef444420' },
+]
+
+const DURATION_OPTIONS = [
+  { label: '⚡ 15 min', value: 'short' },
+  { label: '🕐 1 Std',  value: 'medium' },
+  { label: '⏳ 2 Std',  value: 'long' },
+]
+
+const ENERGY_OPTIONS = [
+  { label: '🌿 Niedrig', value: 'low' },
+  { label: '💛 Mittel',  value: 'medium' },
+  { label: '🔥 Hoch',    value: 'high' },
 ]
 
 function todayStr() {
@@ -39,15 +63,59 @@ function emptyForm(defaultRoomId?: number, rooms?: HomeRoom[]): FormData {
     frequency_days: '7',
     last_done: todayStr(),
     priority: 2,
+    category_id: null,
+    duration: null,
+    energy_level: null,
   }
 }
 
-export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRoomId, editTask }: Props) {
+function PillGroup<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string
+  options: { label: string; value: T; color?: string; bg?: string }[]
+  value: T | null
+  onChange: (v: T | null) => void
+}) {
+  return (
+    <div>
+      <label className="text-xs text-[var(--color-text-muted)] mb-2 block">{label}</label>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => {
+          const active = value === opt.value
+          return (
+            <button
+              key={String(opt.value)}
+              type="button"
+              onClick={() => onChange(active ? null : opt.value)}
+              className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+              style={
+                active && opt.color
+                  ? { background: opt.bg, color: opt.color, outline: `1.5px solid ${opt.color}` }
+                  : active
+                  ? { background: 'var(--color-primary)', color: '#fff' }
+                  : { background: 'var(--color-muted)', color: 'var(--color-text-muted)' }
+              }
+            >
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+export default function HomeTaskForm({
+  open, onClose, onSubmit, rooms, categories, defaultRoomId, editTask,
+}: Props) {
   const isEdit = !!editTask
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<FormData>(emptyForm(defaultRoomId, rooms))
 
-  // sync form when editTask changes
   useEffect(() => {
     if (editTask) {
       setForm({
@@ -56,6 +124,9 @@ export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRo
         frequency_days: editTask.frequency_days ? String(editTask.frequency_days) : '',
         last_done: editTask.last_done ?? '',
         priority: editTask.priority,
+        category_id: editTask.category_id ?? null,
+        duration: editTask.duration ?? null,
+        energy_level: editTask.energy_level ?? null,
       })
     } else {
       setForm(emptyForm(defaultRoomId, rooms))
@@ -80,7 +151,6 @@ export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRo
   }
 
   async function handleReset() {
-    // clear last_done so task is treated as never done
     setSaving(true)
     try {
       await onSubmit({ ...form, last_done: '' })
@@ -97,6 +167,8 @@ export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRo
       title={isEdit ? 'Aufgabe bearbeiten' : 'Aufgabe hinzufügen'}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+        {/* Raum — nur beim Erstellen */}
         {!isEdit && (
           <div>
             <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Raum</label>
@@ -106,14 +178,13 @@ export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRo
               onChange={(e) => setForm({ ...form, room_id: Number(e.target.value) })}
             >
               {rooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.icon} {r.name}
-                </option>
+                <option key={r.id} value={r.id}>{r.icon} {r.name}</option>
               ))}
             </select>
           </div>
         )}
 
+        {/* Titel */}
         <input
           className="w-full p-3 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-transparent"
           placeholder="Aufgabenbeschreibung..."
@@ -123,6 +194,32 @@ export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRo
           required
         />
 
+        {/* Priorität */}
+        <PillGroup
+          label="Priorität"
+          options={PRIORITY_OPTIONS}
+          value={form.priority}
+          onChange={(v) => setForm({ ...form, priority: v ?? 2 })}
+        />
+
+        {/* Kategorie */}
+        {categories.length > 0 && (
+          <div>
+            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Kategorie</label>
+            <select
+              className="w-full p-3 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-[var(--color-surface)]"
+              value={form.category_id ?? ''}
+              onChange={(e) => setForm({ ...form, category_id: e.target.value ? Number(e.target.value) : null })}
+            >
+              <option value="">— keine Kategorie —</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Wiederholung */}
         <div>
           <label className="text-xs text-[var(--color-text-muted)] mb-2 block">Wiederholung</label>
           <div className="flex flex-wrap gap-2">
@@ -143,11 +240,10 @@ export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRo
           </div>
         </div>
 
+        {/* Zuletzt erledigt */}
         {form.frequency_days && (
           <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">
-              Zuletzt erledigt
-            </label>
+            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Zuletzt erledigt</label>
             <input
               type="date"
               max={todayStr()}
@@ -167,7 +263,24 @@ export default function HomeTaskForm({ open, onClose, onSubmit, rooms, defaultRo
           </div>
         )}
 
-        <div className="flex gap-3">
+        {/* Dauer */}
+        <PillGroup
+          label="Geschätzte Dauer"
+          options={DURATION_OPTIONS}
+          value={form.duration}
+          onChange={(v) => setForm({ ...form, duration: v })}
+        />
+
+        {/* Energiebedarf */}
+        <PillGroup
+          label="Energiebedarf"
+          options={ENERGY_OPTIONS}
+          value={form.energy_level}
+          onChange={(v) => setForm({ ...form, energy_level: v })}
+        />
+
+        {/* Buttons */}
+        <div className="flex gap-3 pt-1">
           <button
             type="button"
             onClick={() => { reset(); onClose() }}

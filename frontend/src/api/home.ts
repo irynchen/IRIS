@@ -9,6 +9,13 @@ export interface HomeRoom {
   sort_order: number
 }
 
+export interface HomeCategory {
+  id: number
+  name: string
+  icon: string | null
+  sort_order: number
+}
+
 export interface HomeTask {
   id: number
   room_id: number
@@ -19,10 +26,18 @@ export interface HomeTask {
   priority: number
   notes: string | null
   status: TaskStatus
+  category_id: number | null
+  duration: string | null
+  energy_level: string | null
 }
 
 export async function fetchRooms(): Promise<HomeRoom[]> {
   const res = await api.get<HomeRoom[]>('/home/rooms')
+  return res.data
+}
+
+export async function fetchCategories(): Promise<HomeCategory[]> {
+  const res = await api.get<HomeCategory[]>('/home/categories')
   return res.data
 }
 
@@ -49,6 +64,9 @@ export async function createTask(payload: {
   last_done?: string | null
   priority?: number
   notes?: string | null
+  category_id?: number | null
+  duration?: string | null
+  energy_level?: string | null
 }): Promise<HomeTask> {
   const res = await api.post<HomeTask>('/home/tasks', payload)
   return res.data

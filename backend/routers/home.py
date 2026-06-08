@@ -7,7 +7,6 @@ from auth.jwt import get_current_user
 
 router = APIRouter(prefix="/api/home", tags=["home"])
 
-# Subquery used in every task query to scope to the Zuhause area
 HOME_AREA = "(SELECT id FROM areas WHERE slug = 'home')"
 
 
@@ -29,8 +28,16 @@ def compute_status(last_done_str: Optional[str], frequency_days: Optional[int]) 
 
 
 SELECT_TASK = (
-    "id, room_id, title, frequency_days, last_done::text, next_due::text, priority, notes"
+    "id, room_id, title, frequency_days, last_done::text, next_due::text, "
+    "priority, notes, category_id, duration, energy_level"
 )
+
+
+class CategoryOut(BaseModel):
+    id: int
+    name: str
+    icon: Optional[str] = None
+    sort_order: int
 
 
 class RoomIn(BaseModel):
@@ -53,6 +60,9 @@ class TaskIn(BaseModel):
     last_done: Optional[str] = None
     priority: int = 2
     notes: Optional[str] = None
+    category_id: Optional[int] = None
+    duration: Optional[str] = None
+    energy_level: Optional[str] = None
 
 
 class TaskPatch(BaseModel):
@@ -62,6 +72,9 @@ class TaskPatch(BaseModel):
     next_due: Optional[str] = None        # empty string "" means reset to NULL
     priority: Optional[int] = None
     notes: Optional[str] = None
+    category_id: Optional[int] = None
+    duration: Optional[str] = None
+    energy_level: Optional[str] = None
 
 
 class TaskOut(BaseModel):
@@ -74,12 +87,29 @@ class TaskOut(BaseModel):
     priority: int
     notes: Optional[str] = None
     status: str = "ok"
+    category_id: Optional[int] = None
+    duration: Optional[str] = None
+    energy_level: Optional[str] = None
 
 
 def row_to_task(row) -> dict:
     d = dict(row)
     d["status"] = compute_status(d.get("last_done"), d.get("frequency_days"))
     return d
+
+
+@router.get("/categories", response_model=List[CategoryOut])
+async def list_categories(user=Depends(get_current_user)):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT ac.id, ac.name, ac.icon, ac.sort_order "
+            "FROM area_categories ac "
+            "JOIN areas a ON ac.area_id = a.id "
+            "WHERE a.slug = 'home' "
+            "ORDER BY ac.sort_order"
+        )
+        return [dict(r) for r in rows]
 
 
 @router.get("/rooms", response_model=List[RoomOut])
@@ -109,13 +139,13 @@ async def list_tasks(room_id: Optional[int] = None, user=Depends(get_current_use
         if room_id:
             rows = await conn.fetch(
                 f"SELECT {SELECT_TASK} FROM tasks "
-                f"WHERE area_id = {HOME_AREA} AND room_id = $1 ORDER BY priority, title",
+                f"WHERE area_id = {HOME_AREA} AND room_id = $1 ORDER BY priority DESC, title",
                 room_id,
             )
         else:
             rows = await conn.fetch(
                 f"SELECT {SELECT_TASK} FROM tasks "
-                f"WHERE area_id = {HOME_AREA} ORDER BY priority, next_due NULLS LAST"
+                f"WHERE area_id = {HOME_AREA} ORDER BY priority DESC, next_due NULLS LAST"
             )
         return [row_to_task(r) for r in rows]
 
@@ -129,7 +159,7 @@ async def today_tasks(user=Depends(get_current_user)):
         rows = await conn.fetch(
             f"SELECT {SELECT_TASK} FROM tasks "
             f"WHERE area_id = {HOME_AREA} AND next_due IS NOT NULL AND next_due <= $1 "
-            "ORDER BY next_due, priority",
+            "ORDER BY next_due, priority DESC",
             two_days,
         )
         return [row_to_task(r) for r in rows]
@@ -144,9 +174,12 @@ async def create_task(item: TaskIn, user=Depends(get_current_user)):
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            f"INSERT INTO tasks (area_id, room_id, title, frequency_days, last_done, next_due, priority, notes) "
-            f"VALUES ({HOME_AREA},$1,$2,$3,$4,$5,$6,$7) RETURNING {SELECT_TASK}",
-            item.room_id, item.title, item.frequency_days, last_done, next_due, item.priority, item.notes,
+            f"INSERT INTO tasks "
+            f"(area_id, room_id, title, frequency_days, last_done, next_due, "
+            f"priority, notes, category_id, duration, energy_level) "
+            f"VALUES ({HOME_AREA},$1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING {SELECT_TASK}",
+            item.room_id, item.title, item.frequency_days, last_done, next_due,
+            item.priority, item.notes, item.category_id, item.duration, item.energy_level,
         )
         return row_to_task(row)
 
