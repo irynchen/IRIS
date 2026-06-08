@@ -167,6 +167,7 @@ INSERT INTO goal_areas (name, icon, color, sort_order) VALUES
 ON CONFLICT (sort_order) DO NOTHING;
 
 INSERT INTO home_rooms (name, icon, sort_order) VALUES
+    ('Wohnung',       '🏠',  0),
     ('Küche',         '🍳',  1),
     ('Bad',           '🚿',  2),
     ('Schlafzimmer',  '🛏',  3),
