@@ -168,21 +168,19 @@ export default function HomeTaskForm({
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-        {/* Raum — nur beim Erstellen */}
-        {!isEdit && (
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Raum</label>
-            <select
-              className="w-full p-3 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-[var(--color-surface)]"
-              value={form.room_id}
-              onChange={(e) => setForm({ ...form, room_id: Number(e.target.value) })}
-            >
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>{r.icon} {r.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Raum */}
+        <div>
+          <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Raum</label>
+          <select
+            className="w-full p-3 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-[var(--color-surface)]"
+            value={form.room_id}
+            onChange={(e) => setForm({ ...form, room_id: Number(e.target.value) })}
+          >
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>{r.icon} {r.name}</option>
+            ))}
+          </select>
+        </div>
 
         {/* Titel */}
         <input

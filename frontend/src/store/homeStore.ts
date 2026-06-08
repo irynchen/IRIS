@@ -97,11 +97,19 @@ export const useHomeStore = create<HomeState>((set, get) => ({
     const prev = get().tasksByRoom[roomId] ?? []
     try {
       const updated = await apiPatch(taskId, payload)
+      const newRoomId = updated.room_id
+      const byRoom = { ...get().tasksByRoom }
+
+      if (newRoomId !== roomId) {
+        // Task moved to a different room
+        byRoom[roomId] = prev.filter((t) => t.id !== taskId)
+        byRoom[newRoomId] = [...(byRoom[newRoomId] ?? []), updated]
+      } else {
+        byRoom[roomId] = prev.map((t) => t.id === taskId ? updated : t)
+      }
+
       set({
-        tasksByRoom: {
-          ...get().tasksByRoom,
-          [roomId]: prev.map((t) => t.id === taskId ? updated : t),
-        },
+        tasksByRoom: byRoom,
         todayTasks: get().todayTasks.map((t) => t.id === taskId ? updated : t),
       })
     } catch {

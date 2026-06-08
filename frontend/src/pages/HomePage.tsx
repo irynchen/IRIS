@@ -71,6 +71,7 @@ export default function HomePage() {
   }) {
     if (editTask) {
       await update(editTask.id, editTask.room_id, {
+        room_id: form.room_id,
         title: form.title.trim(),
         frequency_days: form.frequency_days ? Number(form.frequency_days) : null,
         last_done: form.last_done || null,
