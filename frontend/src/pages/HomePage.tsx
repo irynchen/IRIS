@@ -10,7 +10,7 @@ import EmptyState from '../components/ui/EmptyState'
 import BottomSheet from '../components/ui/BottomSheet'
 
 export default function HomePage() {
-  const { rooms, categories, tasksByRoom, todayTasks, loading, error, load, loadToday, markDone, add, update, remove } =
+  const { rooms, categories, tasksByRoom, loading, error, load, markDone, add, update, remove } =
     useHomeStore()
   const [showForm, setShowForm] = useState(false)
   const [editTask, setEditTask] = useState<HomeTask | undefined>()
@@ -18,10 +18,7 @@ export default function HomePage() {
   const [formDefaultRoom, setFormDefaultRoom] = useState<number | undefined>()
   const [filterCategory, setFilterCategory] = useState<number | null>(null)
 
-  useEffect(() => {
-    load()
-    loadToday()
-  }, [])
+  useEffect(() => { load() }, [])
 
   function openAddForRoom(room: HomeRoom) {
     setEditTask(undefined)
@@ -71,9 +68,12 @@ export default function HomePage() {
     }
   }
 
+  // Derive today tasks from tasksByRoom — always in sync, no separate API call needed
+  const allTasks = Object.values(tasksByRoom).flat()
+  const urgentTasks = allTasks.filter((t) => t.status === 'overdue' || t.status === 'due_soon')
   const filteredTodayTasks = filterCategory
-    ? todayTasks.filter((t) => t.category_id === filterCategory)
-    : todayTasks
+    ? urgentTasks.filter((t) => t.category_id === filterCategory)
+    : urgentTasks
 
   const filteredByRoom = filterCategory
     ? Object.fromEntries(
