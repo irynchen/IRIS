@@ -71,6 +71,10 @@ export default function HomePage() {
     }
   }
 
+  const filteredTodayTasks = filterCategory
+    ? todayTasks.filter((t) => t.category_id === filterCategory)
+    : todayTasks
+
   const filteredByRoom = filterCategory
     ? Object.fromEntries(
         Object.entries(tasksByRoom).map(([id, tasks]) => [
@@ -85,8 +89,8 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 py-4">
-        <div className="flex items-center justify-between">
+      <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 pt-4 pb-3">
+        <div className="flex items-center justify-between mb-3">
           <h1 className="text-2xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
             Zuhause
           </h1>
@@ -97,6 +101,33 @@ export default function HomePage() {
             +
           </button>
         </div>
+        {categories.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 scrollbar-hide">
+            <button
+              onClick={() => setFilterCategory(null)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                filterCategory === null
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'bg-[var(--color-muted)] text-[var(--color-text-muted)]'
+              }`}
+            >
+              Alle
+            </button>
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setFilterCategory(filterCategory === c.id ? null : c.id)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  filterCategory === c.id
+                    ? 'bg-[var(--color-primary)] text-white'
+                    : 'bg-[var(--color-muted)] text-[var(--color-text-muted)]'
+                }`}
+              >
+                {c.icon} {c.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 p-4 max-w-2xl mx-auto w-full">
@@ -108,36 +139,7 @@ export default function HomePage() {
           <p className="text-red-400 text-sm text-center mt-10">{error}</p>
         ) : (
           <>
-            <TodayBlock tasks={todayTasks} onDone={markDone} />
-
-            {/* Kategorien-Filter */}
-            {categories.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 mb-4 scrollbar-hide">
-                <button
-                  onClick={() => setFilterCategory(null)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    filterCategory === null
-                      ? 'bg-[var(--color-primary)] text-white'
-                      : 'bg-[var(--color-muted)] text-[var(--color-text-muted)]'
-                  }`}
-                >
-                  Alle
-                </button>
-                {categories.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setFilterCategory(filterCategory === c.id ? null : c.id)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      filterCategory === c.id
-                        ? 'bg-[var(--color-primary)] text-white'
-                        : 'bg-[var(--color-muted)] text-[var(--color-text-muted)]'
-                    }`}
-                  >
-                    {c.icon} {c.name}
-                  </button>
-                ))}
-              </div>
-            )}
+            <TodayBlock tasks={filteredTodayTasks} onDone={markDone} />
 
             {rooms.length === 0 ? (
               <EmptyState icon="🏠" message="Keine Räume vorhanden" />
