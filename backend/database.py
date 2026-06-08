@@ -240,7 +240,7 @@ FROM areas a,
     ('Organisation', '📋', 5),
     ('Einkaufen',    '🛒', 6),
     ('Dekoration',   '🌺', 7)
-) AS cat(name TEXT, icon TEXT, sort_order INT)
+) AS cat(name, icon, sort_order)
 WHERE a.slug = 'home'
 ON CONFLICT (area_id, name) DO NOTHING;
 
