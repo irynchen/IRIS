@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import {
   AreaInfo, AreaCategory, AreaTask,
   fetchAreaInfo, fetchAreaCategories, fetchAreaTasks,
@@ -21,7 +21,7 @@ const PRIORITY_CONFIG: Record<number, { label: string; color: string; bg: string
   1: { label: 'Niedrig', color: '#6B8F71', bg: '#6B8F7118' },
 }
 
-const DURATION_ICON: Record<string, string> = { short: '⚡', medium: '🕐', long: '⏳' }
+const DURATION_ICON: Record<string, string> = { short: '⚡', short30: '⏱', medium: '🕐', long: '⏳', very_long: '⌛' }
 const ENERGY_ICON:   Record<string, string> = { low: '🌿', medium: '💛', high: '🔥' }
 
 function formatDate(d: string | null) {
@@ -31,7 +31,8 @@ function formatDate(d: string | null) {
 
 export default function AreaTaskPage() {
   const location = useLocation()
-  const slug = location.pathname.slice(1) // "/beauty" → "beauty"
+  const slug = location.pathname.slice(1)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [areaInfo, setAreaInfo] = useState<AreaInfo | null>(null)
   const [categories, setCategories] = useState<AreaCategory[]>([])
   const [tasks, setTasks] = useState<AreaTask[]>([])
@@ -59,6 +60,18 @@ export default function AreaTaskPage() {
 
   useEffect(() => { load() }, [load])
 
+  // Auto-open edit form if ?edit=ID is in URL
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (!editId || loading) return
+    const task = tasks.find((t) => t.id === Number(editId))
+    if (task) {
+      setEditTask(task)
+      setShowForm(true)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, loading, tasks])
+
   const displayed = filterCat
     ? tasks.filter((t) => t.category_id === filterCat)
     : tasks
@@ -85,6 +98,7 @@ export default function AreaTaskPage() {
     energy_level: string | null
     frequency_days: string
     last_done: string
+    next_due: string
   }) {
     if (!slug) return
     const payload = {
@@ -96,6 +110,7 @@ export default function AreaTaskPage() {
       energy_level: form.energy_level,
       frequency_days: form.frequency_days ? Number(form.frequency_days) : null,
       last_done: form.last_done || null,
+      next_due: form.next_due || null,
     }
     if (editTask) {
       const updated = await patchAreaTask(slug, editTask.id, payload)

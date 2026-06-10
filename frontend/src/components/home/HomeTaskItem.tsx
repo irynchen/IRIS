@@ -20,9 +20,11 @@ const PRIORITY_CONFIG: Record<number, { label: string; color: string; bg: string
 }
 
 const DURATION_ICON: Record<string, string> = {
-  short:  '⚡',
-  medium: '🕐',
-  long:   '⏳',
+  short:     '⚡',
+  short30:   '⏱',
+  medium:    '🕐',
+  long:      '⏳',
+  very_long: '⌛',
 }
 
 const ENERGY_ICON: Record<string, string> = {

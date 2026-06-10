@@ -58,6 +58,7 @@ class TaskIn(BaseModel):
     title: str
     frequency_days: Optional[int] = None
     last_done: Optional[str] = None
+    next_due: Optional[str] = None
     priority: int = 2
     notes: Optional[str] = None
     category_id: Optional[int] = None
@@ -67,6 +68,7 @@ class TaskIn(BaseModel):
 
 class TaskPatch(BaseModel):
     title: Optional[str] = None
+    room_id: Optional[int] = None
     frequency_days: Optional[int] = None
     last_done: Optional[str] = None       # empty string "" means reset to NULL
     next_due: Optional[str] = None        # empty string "" means reset to NULL
@@ -168,9 +170,12 @@ async def today_tasks(user=Depends(get_current_user)):
 @router.post("/tasks", response_model=TaskOut)
 async def create_task(item: TaskIn, user=Depends(get_current_user)):
     last_done = Date.fromisoformat(item.last_done) if item.last_done else None
-    next_due = None
-    if last_done and item.frequency_days:
+    if item.next_due:
+        next_due = Date.fromisoformat(item.next_due)
+    elif last_done and item.frequency_days:
         next_due = last_done + timedelta(days=item.frequency_days)
+    else:
+        next_due = None
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(

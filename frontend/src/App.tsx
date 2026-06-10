@@ -10,6 +10,8 @@ import DoctorsPage from './pages/DoctorsPage'
 import MedicationsPage from './pages/MedicationsPage'
 import GoalsPage from './pages/GoalsPage'
 import AreaTaskPage from './pages/AreaTaskPage'
+import TravelPage from './pages/TravelPage'
+import CalendarPage from './pages/CalendarPage'
 
 function PlaceholderPage({ title, emoji }: { title: string; emoji: string }) {
   return (
@@ -39,7 +41,8 @@ function ProtectedRoutes() {
         <Route path="/health/doctors" element={<DoctorsPage />} />
         <Route path="/health/medications" element={<MedicationsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
-        <Route path="/travel" element={<PlaceholderPage title="Reisen" emoji="✈️" />} />
+        <Route path="/travel" element={<TravelPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/beauty"    element={<AreaTaskPage />} />
         <Route path="/learning"  element={<AreaTaskPage />} />
         <Route path="/car"       element={<AreaTaskPage />} />

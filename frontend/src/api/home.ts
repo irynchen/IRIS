@@ -62,6 +62,7 @@ export async function createTask(payload: {
   title: string
   frequency_days?: number | null
   last_done?: string | null
+  next_due?: string | null
   priority?: number
   notes?: string | null
   category_id?: number | null

@@ -11,6 +11,7 @@ interface FormData {
   energy_level: string | null
   frequency_days: string
   last_done: string
+  next_due: string
 }
 
 interface Props {
@@ -39,8 +40,10 @@ const PRIORITY_OPTIONS = [
 
 const DURATION_OPTIONS = [
   { label: '⚡ 15 min', value: 'short' },
+  { label: '⏱ 30 min', value: 'short30' },
   { label: '🕐 1 Std',  value: 'medium' },
   { label: '⏳ 2 Std',  value: 'long' },
+  { label: '⌛ 3 Std',  value: 'very_long' },
 ]
 
 const ENERGY_OPTIONS = [
@@ -53,6 +56,13 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
 
+function calcNextDue(lastDone: string, freqDays: string): string {
+  if (!lastDone || !freqDays) return ''
+  const d = new Date(lastDone + 'T00:00:00')
+  d.setDate(d.getDate() + Number(freqDays))
+  return d.toISOString().slice(0, 10)
+}
+
 function emptyForm(): FormData {
   return {
     title: '',
@@ -63,6 +73,7 @@ function emptyForm(): FormData {
     energy_level: null,
     frequency_days: '',
     last_done: todayStr(),
+    next_due: '',
   }
 }
 
@@ -107,23 +118,42 @@ export default function AreaTaskForm({ open, onClose, onSubmit, categories, edit
   const isEdit = !!editTask
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<FormData>(emptyForm())
+  const [nextDueManual, setNextDueManual] = useState(false)
 
   useEffect(() => {
     if (editTask) {
+      setNextDueManual(true)
       setForm({
-        title: editTask.title,
-        category_id: editTask.category_id ?? null,
-        priority: editTask.priority,
-        notes: editTask.notes ?? null,
-        duration: editTask.duration ?? null,
-        energy_level: editTask.energy_level ?? null,
-        frequency_days: editTask.frequency_days ? String(editTask.frequency_days) : '',
-        last_done: editTask.last_done ?? '',
+        title:         editTask.title,
+        category_id:   editTask.category_id ?? null,
+        priority:      editTask.priority,
+        notes:         editTask.notes ?? null,
+        duration:      editTask.duration ?? null,
+        energy_level:  editTask.energy_level ?? null,
+        frequency_days:editTask.frequency_days ? String(editTask.frequency_days) : '',
+        last_done:     editTask.last_done ?? '',
+        next_due:      editTask.next_due ?? '',
       })
     } else {
+      setNextDueManual(false)
       setForm(emptyForm())
     }
   }, [editTask, open])
+
+  function handleFreqChange(val: string) {
+    const next = nextDueManual ? form.next_due : calcNextDue(form.last_done, val)
+    setForm((f) => ({ ...f, frequency_days: val, next_due: next }))
+  }
+
+  function handleLastDoneChange(val: string) {
+    const next = nextDueManual ? form.next_due : calcNextDue(val, form.frequency_days)
+    setForm((f) => ({ ...f, last_done: val, next_due: next }))
+  }
+
+  function handleNextDueChange(val: string) {
+    setNextDueManual(true)
+    setForm((f) => ({ ...f, next_due: val }))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -185,7 +215,7 @@ export default function AreaTaskForm({ open, onClose, onSubmit, categories, edit
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setForm({ ...form, frequency_days: opt.value })}
+                onClick={() => handleFreqChange(opt.value)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   form.frequency_days === opt.value
                     ? 'bg-[var(--color-primary)] text-white'
@@ -198,18 +228,42 @@ export default function AreaTaskForm({ open, onClose, onSubmit, categories, edit
           </div>
         </div>
 
-        {form.frequency_days && (
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Zuletzt erledigt</label>
+        {/* Daten nebeneinander */}
+        <div className="grid grid-cols-2 gap-3">
+          {form.frequency_days && (
+            <div>
+              <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Zuletzt erledigt</label>
+              <input
+                type="date"
+                max={todayStr()}
+                className="w-full p-3 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-transparent"
+                value={form.last_done}
+                onChange={(e) => handleLastDoneChange(e.target.value)}
+              />
+            </div>
+          )}
+          <div className={form.frequency_days ? '' : 'col-span-2'}>
+            <label className="text-xs text-[var(--color-text-muted)] mb-1 block">
+              Nächste Fälligkeit
+              {nextDueManual && form.frequency_days && (
+                <button
+                  type="button"
+                  className="ml-2 text-[var(--color-primary)] underline text-[10px]"
+                  onClick={() => {
+                    setNextDueManual(false)
+                    setForm((f) => ({ ...f, next_due: calcNextDue(f.last_done, f.frequency_days) }))
+                  }}
+                >neu berechnen</button>
+              )}
+            </label>
             <input
               type="date"
-              max={todayStr()}
               className="w-full p-3 rounded-xl border border-[var(--color-muted)] focus:outline-none focus:border-[var(--color-primary)] text-sm bg-transparent"
-              value={form.last_done}
-              onChange={(e) => setForm({ ...form, last_done: e.target.value })}
+              value={form.next_due}
+              onChange={(e) => handleNextDueChange(e.target.value)}
             />
           </div>
-        )}
+        </div>
 
         <PillGroup
           label="Geschätzte Dauer"

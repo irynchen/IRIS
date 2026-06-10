@@ -313,6 +313,22 @@ CREATE INDEX IF NOT EXISTS idx_tasks_next_due ON tasks (next_due) WHERE next_due
 """
 
 MIGRATE_SQL = """
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_duration_check;
+ALTER TABLE tasks ADD CONSTRAINT tasks_duration_check
+  CHECK (duration IN ('short', 'short30', 'medium', 'long', 'very_long'));
+CREATE TABLE IF NOT EXISTS travel_ideas (
+    id          SERIAL PRIMARY KEY,
+    title       VARCHAR(200) NOT NULL,
+    country     VARCHAR(100),
+    city        VARCHAR(100),
+    budget_min  INTEGER,
+    budget_max  INTEGER,
+    season      VARCHAR(20) CHECK (season IN ('spring','summer','autumn','winter','any')),
+    priority    SMALLINT DEFAULT 2 CHECK (priority BETWEEN 1 AND 3),
+    status      VARCHAR(20) DEFAULT 'idea' CHECK (status IN ('idea','planned','booked','done')),
+    notes       TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
 ALTER TABLE day_plan ADD COLUMN IF NOT EXISTS repeat_days INTEGER;
 ALTER TABLE day_plan ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES day_plan(id) ON DELETE SET NULL;
 ALTER TABLE health_records ADD COLUMN IF NOT EXISTS bp_morning_systolic INTEGER;
@@ -327,6 +343,48 @@ ALTER TABLE health_records ADD COLUMN IF NOT EXISTS sleep_notes TEXT;
 ALTER TABLE health_records ADD COLUMN IF NOT EXISTS knee_exercises_done BOOLEAN DEFAULT FALSE;
 ALTER TABLE health_records ADD COLUMN IF NOT EXISTS anxiety INTEGER;
 ALTER TABLE health_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+INSERT INTO area_categories (area_id, name, icon, sort_order)
+SELECT a.id, cat.name, cat.icon, cat.sort_order
+FROM areas a,
+(VALUES
+    ('Mahlzeiten',          '🍽', 1),
+    ('Meal Prep',           '🥡', 2),
+    ('Einkaufen',           '🛒', 3),
+    ('Supplements',         '💊', 4),
+    ('Rezepte',             '📖', 5),
+    ('Wasser & Trinken',    '💧', 6)
+) AS cat(name, icon, sort_order)
+WHERE a.slug = 'nutrition'
+ON CONFLICT (area_id, name) DO NOTHING;
+
+INSERT INTO area_categories (area_id, name, icon, sort_order)
+SELECT a.id, cat.name, cat.icon, cat.sort_order
+FROM areas a,
+(VALUES
+    ('Sport & Fitness',  '🏋', 1),
+    ('Meditation',       '🧘', 2),
+    ('Entspannung',      '🛁', 3),
+    ('Natur & Spazieren','🌿', 4),
+    ('Soziales',         '👥', 5),
+    ('Selbstfürsorge',   '💆', 6)
+) AS cat(name, icon, sort_order)
+WHERE a.slug = 'wellbeing'
+ON CONFLICT (area_id, name) DO NOTHING;
+
+INSERT INTO area_categories (area_id, name, icon, sort_order)
+SELECT a.id, cat.name, cat.icon, cat.sort_order
+FROM areas a,
+(VALUES
+    ('Aufgaben',         '✅', 1),
+    ('Projekte',         '📁', 2),
+    ('Meetings',         '👥', 3),
+    ('Weiterbildung',    '📚', 4),
+    ('Dokumentation',    '📝', 5),
+    ('Admin',            '🗂', 6)
+) AS cat(name, icon, sort_order)
+WHERE a.slug = 'work'
+ON CONFLICT (area_id, name) DO NOTHING;
 DO $$
 BEGIN
   IF NOT EXISTS (
