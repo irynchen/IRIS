@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useNotificationStore } from '../../store/notificationStore'
 
 const MAIN_ITEMS = [
   { to: '/', icon: '✦', label: 'Übersicht', end: true },
@@ -24,6 +25,8 @@ const MORE_ITEMS = [
 export default function BottomNav() {
   const [showMore, setShowMore] = useState(false)
   const navigate = useNavigate()
+  const counts   = useNotificationStore((s) => s.counts)
+  const badge    = counts.total > 0 ? counts.total : null
 
   function handleMoreNav(to: string) {
     setShowMore(false)
@@ -77,7 +80,14 @@ export default function BottomNav() {
                 }`
               }
             >
-              <span className="text-xl leading-none">{icon}</span>
+              <span className="relative text-xl leading-none">
+                {icon}
+                {to === '/' && badge && (
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[15px] h-[15px] flex items-center justify-center px-0.5 leading-none">
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                )}
+              </span>
               <span className="text-[10px] font-medium">{label}</span>
             </NavLink>
           ))}

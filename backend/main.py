@@ -1,15 +1,19 @@
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import create_tables
-from routers import health, day_plan, home, health_doctors, health_medications, goals, tasks, travel, dashboard, calendar
+from routers import health, day_plan, home, health_doctors, health_medications, goals, tasks, travel, dashboard, calendar, notifications
 from auth import jwt as auth_jwt
+from email_service import scheduler_loop
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_tables()
+    task = asyncio.create_task(scheduler_loop())
     yield
+    task.cancel()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -38,6 +42,7 @@ app.include_router(tasks.router)
 app.include_router(travel.router)
 app.include_router(dashboard.router)
 app.include_router(calendar.router)
+app.include_router(notifications.router)
 
 
 @app.get("/api/health-check")

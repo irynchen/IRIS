@@ -1,6 +1,7 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { useNotificationStore } from '../../store/notificationStore'
 
 const MAIN_ITEMS = [
   { to: '/', icon: '✦', label: 'Übersicht', end: true },
@@ -43,13 +44,22 @@ function NavItem({ to, icon, label, end }: { to: string; icon: string; label: st
 
 export default function SideNav() {
   const setToken = useAuthStore((s) => s.setToken)
+  const counts   = useNotificationStore((s) => s.counts)
+  const badge    = counts.total > 0 ? counts.total : null
 
   return (
     <nav className="fixed left-0 top-0 bottom-0 w-60 bg-[var(--color-surface)] border-r border-[var(--color-muted)] flex flex-col z-50">
       <div className="px-6 py-6">
-        <h1 className="text-3xl font-semibold text-[var(--color-primary)]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-          IRIS
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-semibold text-[var(--color-primary)]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+            IRIS
+          </h1>
+          {badge && (
+            <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+              {badge > 99 ? '99+' : badge}
+            </span>
+          )}
+        </div>
         <p className="text-xs text-[var(--color-text-muted)] mt-1">Leben im Gleichgewicht</p>
       </div>
 
