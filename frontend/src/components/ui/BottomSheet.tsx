@@ -17,13 +17,14 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+    <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl md:rounded-2xl p-6 shadow-2xl animate-slide-up">
-        <div className="flex items-center justify-between mb-5">
+      <div className="relative w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl md:rounded-2xl shadow-2xl animate-slide-up flex flex-col max-h-[92vh]">
+        {/* Sticky header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
           {title && (
             <h2 className="text-xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
               {title}
@@ -36,7 +37,10 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
             ×
           </button>
         </div>
-        {children}
+        {/* Scrollable content */}
+        <div className="overflow-y-auto px-6 pb-8 flex-1">
+          {children}
+        </div>
       </div>
     </div>
   )

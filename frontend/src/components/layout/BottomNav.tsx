@@ -10,6 +10,7 @@ const MAIN_ITEMS = [
 ]
 
 const MORE_ITEMS = [
+  { to: '/shopping',  icon: '🛒', label: 'Einkauf' },
   { to: '/calendar',  icon: '📅', label: 'Kalender' },
   { to: '/goals',     icon: '🧭', label: 'Ziele' },
   { to: '/travel',    icon: '✈️', label: 'Reisen' },
@@ -19,7 +20,9 @@ const MORE_ITEMS = [
   { to: '/car',       icon: '🚗', label: 'Auto' },
   { to: '/nutrition', icon: '🥗', label: 'Ernährung' },
   { to: '/wellbeing', icon: '🧘', label: 'Wohlbefinden' },
-  { to: '/work',      icon: '💼', label: 'Arbeit' },
+  { to: '/work',       icon: '💼', label: 'Arbeit' },
+  { to: '/psychology', icon: '🌸', label: 'Innere Arbeit' },
+  { to: '/settings',   icon: '⚙️', label: 'Einstellungen' },
 ]
 
 export default function BottomNav() {

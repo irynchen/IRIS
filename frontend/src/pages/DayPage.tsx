@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useDayStore } from '../store/dayStore'
 import Timeline from '../components/day/Timeline'
 import TaskForm from '../components/day/TaskForm'
@@ -49,8 +50,21 @@ export default function DayPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingTask, setEditingTask] = useState<DayTask | undefined>(undefined)
   const [view, setView] = useState<ViewMode>('timeline')
+  const [toast, setToast] = useState<string | null>(null)
   const today = todayStr()
   const stripRef = useRef<HTMLDivElement>(null)
+  const [searchParams] = useSearchParams()
+
+  // Sync date from ?date= URL param (set by calendar)
+  useEffect(() => {
+    const dateParam = searchParams.get('date')
+    if (dateParam && dateParam !== currentDate) setDate(dateParam)
+  }, [])
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
 
   useEffect(() => {
     load(currentDate)
@@ -86,6 +100,10 @@ export default function DayPage() {
     }
     if (editingTask) {
       await update(editingTask.id, payload)
+      if (payload.date && payload.date !== currentDate) {
+        const d = new Date(payload.date + 'T00:00:00')
+        showToast(`Verschoben auf ${d.getDate()}. ${['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'][d.getMonth()]}`)
+      }
     } else {
       await add({ ...payload, date: form.date || currentDate })
     }
@@ -96,6 +114,11 @@ export default function DayPage() {
 
   return (
     <div className="flex flex-col min-h-full">
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[var(--color-primary)] text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg animate-fade-in">
+          ✓ {toast}
+        </div>
+      )}
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 pt-4 pb-3">
         <div className="flex items-center justify-between mb-3">

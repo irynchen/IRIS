@@ -1,4 +1,3 @@
-# IRIS — Architektur v2: Persönliches Lebens-Cockpit
 
 **Stand:** 2026-06-08  
 **Status:** Konzept & Migrationsplan — noch nicht implementiert

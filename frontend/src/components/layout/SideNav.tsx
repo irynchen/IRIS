@@ -11,6 +11,8 @@ const MAIN_ITEMS = [
   { to: '/health', icon: '💚', label: 'Gesundheit' },
   { to: '/goals', icon: '🧭', label: 'Ziele' },
   { to: '/travel', icon: '✈️', label: 'Reisen' },
+  { to: '/shopping', icon: '🛒', label: 'Einkaufszettel' },
+  { to: '/psychology', icon: '🌸', label: 'Innere Arbeit' },
 ]
 
 const MORE_ITEMS = [
@@ -77,7 +79,10 @@ export default function SideNav() {
         ))}
       </div>
 
-      <div className="px-6 py-5 border-t border-[var(--color-muted)]">
+      <div className="px-3 pb-1">
+        <NavItem to="/settings" icon="⚙️" label="Einstellungen" />
+      </div>
+      <div className="px-6 py-4 border-t border-[var(--color-muted)]">
         <button
           onClick={() => setToken(null)}
           className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"

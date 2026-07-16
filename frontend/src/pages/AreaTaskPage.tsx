@@ -16,6 +16,11 @@ const STATUS_CONFIG = {
   overdue:  { color: '#ef4444',              label: 'überfällig' },
 }
 
+const TODAY = new Date().toISOString().slice(0, 10)
+function isDoneToday(task: AreaTask) {
+  return !!task.last_done && task.last_done === TODAY
+}
+
 const PRIORITY_CONFIG: Record<number, { label: string; color: string; bg: string }> = {
   3: { label: 'Hoch',    color: '#ef4444', bg: '#ef444418' },
   1: { label: 'Niedrig', color: '#6B8F71', bg: '#6B8F7118' },
@@ -81,6 +86,13 @@ export default function AreaTaskPage() {
     const updated = await markAreaTaskDone(slug, task.id)
     setTasks((prev) => prev.map((t) => t.id === updated.id ? updated : t))
     if (navigator.vibrate) navigator.vibrate(50)
+  }
+
+  async function handleUndoDone(task: AreaTask) {
+    if (!slug) return
+    // leerer String → Backend setzt last_done + next_due auf NULL
+    const updated = await patchAreaTask(slug, task.id, { last_done: '' })
+    setTasks((prev) => prev.map((t) => t.id === updated.id ? updated : t))
   }
 
   async function handleDelete(task: AreaTask) {
@@ -199,15 +211,40 @@ export default function AreaTaskPage() {
                     {items.map((task) => {
                       const cfg = STATUS_CONFIG[task.status]
                       const prio = PRIORITY_CONFIG[task.priority]
+                      const doneToday = isDoneToday(task)
                       return (
-                        <div key={task.id} className="flex items-center gap-3 py-2.5 border-b border-[var(--color-muted)] last:border-0">
-                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cfg.color }} />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-medium truncate">{task.title}</p>
-                              {cfg.label && <span className="text-xs flex-shrink-0" style={{ color: cfg.color }}>{cfg.label}</span>}
+                        <div
+                          key={task.id}
+                          className={`flex items-center gap-3 py-2.5 border-b border-[var(--color-muted)] last:border-0 rounded-xl px-2 -mx-2 transition-colors ${
+                            doneToday ? 'bg-[var(--color-primary)]/8' : ''
+                          }`}
+                        >
+                          {/* Status-Indikator */}
+                          {doneToday ? (
+                            <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center"
+                              style={{ backgroundColor: 'var(--color-primary)' }}>
+                              <span className="text-white text-[10px] font-bold leading-none">✓</span>
                             </div>
-                            {(prio || task.duration || task.energy_level) && (
+                          ) : (
+                            <div className="w-2 h-2 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: cfg.color }} />
+                          )}
+
+                          <div className={`flex-1 min-w-0 ${doneToday ? 'opacity-50' : ''}`}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className={`text-sm font-medium truncate ${doneToday ? 'line-through' : ''}`}>
+                                {task.title}
+                              </p>
+                              {doneToday && (
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                                  style={{ color: 'var(--color-primary)', background: 'rgba(107,143,113,0.12)' }}>
+                                  heute erledigt
+                                </span>
+                              )}
+                              {!doneToday && cfg.label && (
+                                <span className="text-xs flex-shrink-0" style={{ color: cfg.color }}>{cfg.label}</span>
+                              )}
+                            </div>
+                            {!doneToday && (prio || task.duration || task.energy_level) && (
                               <div className="flex items-center gap-1.5 mt-1">
                                 {prio && (
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
@@ -227,14 +264,27 @@ export default function AreaTaskPage() {
                               </p>
                             )}
                           </div>
+
+                          {/* ✓ / Undo-Button */}
                           {task.frequency_days && (
-                            <button
-                              onClick={() => handleDone(task)}
-                              className="text-xs px-3 py-1.5 rounded-lg text-white font-medium flex-shrink-0"
-                              style={{ backgroundColor: 'var(--color-primary)' }}
-                            >
-                              ✓
-                            </button>
+                            doneToday ? (
+                              <button
+                                onClick={() => handleUndoDone(task)}
+                                title="Als nicht erledigt markieren"
+                                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border-2 transition-all hover:border-red-400 hover:text-red-400 border-[var(--color-primary)] text-[var(--color-primary)]"
+                              >
+                                ↩
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleDone(task)}
+                                title="Als erledigt markieren"
+                                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white hover:opacity-90 transition-all"
+                                style={{ backgroundColor: 'var(--color-primary)' }}
+                              >
+                                ✓
+                              </button>
+                            )
                           )}
                           <button
                             onClick={() => { setEditTask(task); setShowForm(true) }}

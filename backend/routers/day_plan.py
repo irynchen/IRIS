@@ -26,6 +26,7 @@ class DayTaskIn(BaseModel):
 
 
 class DayTaskPatch(BaseModel):
+    date: Optional[str] = None
     completed: Optional[bool] = None
     title: Optional[str] = None
     category: Optional[str] = None
@@ -66,10 +67,11 @@ def parse_time(s: Optional[str]) -> Optional[Time]:
 
 
 def coerce_updates(updates: dict) -> dict:
-    """Convert time string values to datetime.Time objects for asyncpg."""
     for key in ("time_from", "time_to"):
         if key in updates:
             updates[key] = parse_time(updates[key])
+    if "date" in updates:
+        updates["date"] = parse_date(updates["date"])
     return updates
 
 

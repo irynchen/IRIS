@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     IRIS_USERNAME: str
     IRIS_PASSWORD_HASH: str
 
+    # Claude AI
+    ANTHROPIC_API_KEY: str = ""
+
     # Email notifications
     SMTP_HOST: str = "mail.gmx.net"
     SMTP_PORT: int = 587

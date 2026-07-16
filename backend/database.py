@@ -344,6 +344,17 @@ ALTER TABLE health_records ADD COLUMN IF NOT EXISTS knee_exercises_done BOOLEAN 
 ALTER TABLE health_records ADD COLUMN IF NOT EXISTS anxiety INTEGER;
 ALTER TABLE health_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
+CREATE TABLE IF NOT EXISTS recurring_events (
+    id         SERIAL PRIMARY KEY,
+    title      VARCHAR(200) NOT NULL,
+    weekdays   INTEGER[] NOT NULL,
+    time_from  TIME,
+    time_to    TIME,
+    color      VARCHAR(30) DEFAULT '#9B7EBD',
+    active     BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 INSERT INTO area_categories (area_id, name, icon, sort_order)
 SELECT a.id, cat.name, cat.icon, cat.sort_order
 FROM areas a,
@@ -395,6 +406,72 @@ BEGIN
   END IF;
 END
 $$;
+
+CREATE TABLE IF NOT EXISTS psych_sessions (
+    id         SERIAL PRIMARY KEY,
+    mode       VARCHAR(50) NOT NULL,
+    title      TEXT,
+    data       JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_psych_sessions_mode ON psych_sessions(mode);
+CREATE INDEX IF NOT EXISTS idx_psych_sessions_created ON psych_sessions(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS psych_items (
+    id         SERIAL PRIMARY KEY,
+    type       VARCHAR(50) NOT NULL,
+    data       JSONB NOT NULL DEFAULT '{}',
+    active     BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_psych_items_type ON psych_items(type);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+    key        VARCHAR(100) PRIMARY KEY,
+    value      TEXT NOT NULL DEFAULT '',
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+INSERT INTO app_settings (key, value) VALUES
+    ('anthropic_api_key', ''),
+    ('notify_hour', '8')
+ON CONFLICT (key) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS shopping_lists (
+    id         SERIAL PRIMARY KEY,
+    name       VARCHAR(100) NOT NULL,
+    icon       VARCHAR(10) DEFAULT '🛒',
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS shopping_items (
+    id         SERIAL PRIMARY KEY,
+    list_id    INTEGER NOT NULL REFERENCES shopping_lists(id) ON DELETE CASCADE,
+    name       VARCHAR(200) NOT NULL,
+    quantity   NUMERIC(8,2),
+    unit       VARCHAR(30),
+    category   VARCHAR(60),
+    barcode    VARCHAR(50),
+    checked    BOOLEAN DEFAULT FALSE,
+    notes      TEXT,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_shopping_items_list ON shopping_items(list_id, sort_order);
+
+CREATE TABLE IF NOT EXISTS shopping_catalog (
+    barcode    VARCHAR(50) PRIMARY KEY,
+    name       VARCHAR(200) NOT NULL,
+    brand      VARCHAR(100),
+    category   VARCHAR(60),
+    unit       VARCHAR(30),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO shopping_lists (name, icon, sort_order)
+SELECT 'Einkaufsliste', '🛒', 0
+WHERE NOT EXISTS (SELECT 1 FROM shopping_lists);
 """
 
 _pool: asyncpg.Pool | None = None

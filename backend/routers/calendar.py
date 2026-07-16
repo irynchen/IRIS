@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import date as Date
+from datetime import date as Date, timedelta
 from database import get_pool
 from auth.jwt import get_current_user
 
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/calendar", tags=["calendar"])
 
 class CalendarEvent(BaseModel):
     id: str
-    type: str           # "day_plan" | "task" | "appointment"
+    type: str           # "day_plan" | "task" | "appointment" | "recurring"
     date: str
     time_from: Optional[str] = None
     time_to: Optional[str] = None
@@ -98,6 +98,33 @@ async def get_events(
                 color="#4A7FA5",
                 source_id=r["id"],
             ))
+
+        # ── recurring events ────────────────────────────────────────────────────
+        rows = await conn.fetch(
+            "SELECT id, title, weekdays, time_from, time_to, color "
+            "FROM recurring_events WHERE active = true"
+        )
+        recurring = [dict(r) for r in rows]
+
+    # generate recurring instances for each day in range
+    cur = d_from
+    while cur <= d_to:
+        dow = cur.weekday()   # 0=Mon … 6=Sun
+        for rec in recurring:
+            if dow in rec["weekdays"]:
+                tf = str(rec["time_from"])[:5] if rec["time_from"] else None
+                tt = str(rec["time_to"])[:5]   if rec["time_to"]   else None
+                events.append(CalendarEvent(
+                    id=f"rec_{rec['id']}_{cur.isoformat()}",
+                    type="recurring",
+                    date=cur.isoformat(),
+                    time_from=tf,
+                    time_to=tt,
+                    title=rec["title"],
+                    color=rec["color"] or "#9B7EBD",
+                    source_id=rec["id"],
+                ))
+        cur += timedelta(days=1)
 
     events.sort(key=lambda e: (e.date, e.time_from or ""))
     return events

@@ -12,6 +12,9 @@ import GoalsPage from './pages/GoalsPage'
 import AreaTaskPage from './pages/AreaTaskPage'
 import TravelPage from './pages/TravelPage'
 import CalendarPage from './pages/CalendarPage'
+import PsychologyPage from './pages/PsychologyPage'
+import SettingsPage from './pages/SettingsPage'
+import ShoppingPage from './pages/ShoppingPage'
 
 function PlaceholderPage({ title, emoji }: { title: string; emoji: string }) {
   return (
@@ -43,6 +46,9 @@ function ProtectedRoutes() {
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/travel" element={<TravelPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/psychology" element={<PsychologyPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/shopping" element={<ShoppingPage />} />
         <Route path="/beauty"    element={<AreaTaskPage />} />
         <Route path="/learning"  element={<AreaTaskPage />} />
         <Route path="/car"       element={<AreaTaskPage />} />

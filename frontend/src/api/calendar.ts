@@ -2,7 +2,7 @@ import api from './client'
 
 export interface CalendarEvent {
   id: string
-  type: 'day_plan' | 'task' | 'appointment'
+  type: 'day_plan' | 'task' | 'appointment' | 'recurring'
   date: string
   time_from: string | null
   time_to: string | null
