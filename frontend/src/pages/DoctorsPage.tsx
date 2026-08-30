@@ -471,7 +471,7 @@ export default function DoctorsPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 pt-4 pb-3">
         <div className="flex items-center gap-3 mb-1">
-          <button onClick={() => navigate('/health')}
+          <button onClick={() => navigate(-1)}
             className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm">
             ← Gesundheit
           </button>

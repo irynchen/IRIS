@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api/client'
 import { useAuthStore } from '../store/authStore'
 
@@ -8,6 +8,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const setToken = useAuthStore((s) => s.setToken)
 
   const submit = async (e: React.FormEvent) => {
@@ -20,7 +21,7 @@ export default function LoginPage() {
         password,
       })
       setToken(res.data.access_token)
-      navigate('/')
+      navigate(searchParams.get('redirect') || '/')
     } catch {
       setError('Falsches Passwort. Bitte erneut versuchen.')
     } finally {

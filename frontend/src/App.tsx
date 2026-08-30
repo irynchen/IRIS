@@ -15,6 +15,7 @@ import CalendarPage from './pages/CalendarPage'
 import PsychologyPage from './pages/PsychologyPage'
 import SettingsPage from './pages/SettingsPage'
 import ShoppingPage from './pages/ShoppingPage'
+import HealthAppRoutes from './health-app/HealthAppRoutes'
 
 function PlaceholderPage({ title, emoji }: { title: string; emoji: string }) {
   return (
@@ -72,6 +73,7 @@ export default function App() {
           path="/login"
           element={token ? <Navigate to="/" replace /> : <LoginPage />}
         />
+        <Route path="/health-app/*" element={<HealthAppRoutes />} />
         <Route path="/*" element={<ProtectedRoutes />} />
       </Routes>
     </BrowserRouter>
