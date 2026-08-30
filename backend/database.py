@@ -472,6 +472,35 @@ CREATE TABLE IF NOT EXISTS shopping_catalog (
 INSERT INTO shopping_lists (name, icon, sort_order)
 SELECT 'Einkaufsliste', '🛒', 0
 WHERE NOT EXISTS (SELECT 1 FROM shopping_lists);
+
+CREATE TABLE IF NOT EXISTS bp_readings (
+    id          SERIAL PRIMARY KEY,
+    measured_at TIMESTAMPTZ NOT NULL,
+    systolic    INTEGER NOT NULL,
+    diastolic   INTEGER NOT NULL,
+    pulse       INTEGER,
+    notes       TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_bp_readings_measured_at ON bp_readings (measured_at DESC);
+
+-- Einmalige Migration bestehender morgens/abends-Werte aus health_records.
+-- NOT EXISTS-Guard auf measured_at verhindert Duplikate bei jedem Neustart.
+INSERT INTO bp_readings (measured_at, systolic, diastolic, pulse)
+SELECT (hr.date::timestamp + TIME '08:00'), hr.bp_morning_systolic, hr.bp_morning_diastolic, hr.pulse_morning
+FROM health_records hr
+WHERE hr.bp_morning_systolic IS NOT NULL AND hr.bp_morning_diastolic IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM bp_readings br WHERE br.measured_at = (hr.date::timestamp + TIME '08:00')
+  );
+
+INSERT INTO bp_readings (measured_at, systolic, diastolic, pulse)
+SELECT (hr.date::timestamp + TIME '20:00'), hr.bp_evening_systolic, hr.bp_evening_diastolic, hr.pulse_evening
+FROM health_records hr
+WHERE hr.bp_evening_systolic IS NOT NULL AND hr.bp_evening_diastolic IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM bp_readings br WHERE br.measured_at = (hr.date::timestamp + TIME '20:00')
+  );
 """
 
 _pool: asyncpg.Pool | None = None

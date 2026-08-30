@@ -162,8 +162,9 @@ def _streak(dates: list[datetime.date]) -> int:
     return streak
 
 
-async def _compute_insights(records: list[dict]) -> list[HealthInsight]:
+async def _compute_insights(records: list[dict], bp_by_date: Optional[dict] = None) -> list[HealthInsight]:
     insights: list[HealthInsight] = []
+    bp_by_date = bp_by_date or {}
 
     if len(records) < 7:
         remaining = 7 - len(records)
@@ -201,8 +202,8 @@ async def _compute_insights(records: list[dict]) -> list[HealthInsight]:
                 ))
 
     # 2. Sleep → BP correlation
-    sleep_bp = [(r["sleep_hours"], r["bp_morning_systolic"]) for r in records
-                if r.get("sleep_hours") is not None and r.get("bp_morning_systolic") is not None]
+    sleep_bp = [(r["sleep_hours"], bp_by_date[r["date"]]) for r in records
+                if r.get("sleep_hours") is not None and r["date"] in bp_by_date]
     if len(sleep_bp) >= 5:
         poor = [bp for h, bp in sleep_bp if h < 6]
         good = [bp for h, bp in sleep_bp if h >= 7]
@@ -263,7 +264,7 @@ async def _compute_insights(records: list[dict]) -> list[HealthInsight]:
             ))
 
     # 5. BP trend
-    bp_vals = [r["bp_morning_systolic"] for r in records if r.get("bp_morning_systolic") is not None]
+    bp_vals = [bp_by_date[r["date"]] for r in records if r["date"] in bp_by_date]
     if len(bp_vals) >= 14:
         recent7 = bp_vals[-7:]
         prev7 = bp_vals[-14:-7]
@@ -469,13 +470,17 @@ async def get_stats(days: int = Query(30), user=Depends(get_current_user)) -> He
             datetime.date.fromisoformat(since)
         )
         records = [dict(r) for r in rows]
+        bp_rows = await conn.fetch(
+            "SELECT systolic, diastolic FROM bp_readings WHERE measured_at >= $1",
+            datetime.datetime.fromisoformat(since)
+        )
 
-    if not records:
+    if not records and not bp_rows:
         return HealthStats(period_days=days)
 
     weights = [float(r["weight_kg"]) for r in records if r.get("weight_kg") is not None]
-    bp_sys = [r["bp_morning_systolic"] for r in records if r.get("bp_morning_systolic") is not None]
-    bp_dia = [r["bp_morning_diastolic"] for r in records if r.get("bp_morning_diastolic") is not None]
+    bp_sys = [r["systolic"] for r in bp_rows]
+    bp_dia = [r["diastolic"] for r in bp_rows]
     sleeps = [float(r["sleep_hours"]) for r in records if r.get("sleep_hours") is not None]
     sleep_q = [r["sleep_quality"] for r in records if r.get("sleep_quality") is not None]
     knee = [r["knee_pain"] for r in records if r.get("knee_pain") is not None]
@@ -517,8 +522,14 @@ async def get_insights(days: int = Query(60), user=Depends(get_current_user)):
             f"SELECT {SELECT_COLS} FROM health_records WHERE date >= $1 ORDER BY date ASC",
             datetime.date.fromisoformat(since)
         )
+        bp_rows = await conn.fetch(
+            "SELECT measured_at::date AS date, AVG(systolic) AS avg_systolic FROM bp_readings "
+            "WHERE measured_at >= $1 GROUP BY measured_at::date",
+            datetime.date.fromisoformat(since)
+        )
     records = [dict(r) for r in rows]
-    return await _compute_insights(records)
+    bp_by_date = {r["date"].isoformat(): float(r["avg_systolic"]) for r in bp_rows}
+    return await _compute_insights(records, bp_by_date)
 
 
 @router.get("/chart/weight")
@@ -532,21 +543,6 @@ async def chart_weight(days: int = Query(90), user=Depends(get_current_user)):
             datetime.date.fromisoformat(since)
         )
     return [{"date": r["date"], "weight": float(r["weight_kg"])} for r in rows]
-
-
-@router.get("/chart/bp")
-async def chart_bp(days: int = Query(30), user=Depends(get_current_user)):
-    pool = await get_pool()
-    since = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
-    async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            "SELECT date::text AS date, bp_morning_systolic, bp_morning_diastolic, "
-            "bp_evening_systolic, bp_evening_diastolic FROM health_records "
-            "WHERE date >= $1 AND (bp_morning_systolic IS NOT NULL OR bp_evening_systolic IS NOT NULL) "
-            "ORDER BY date ASC",
-            datetime.date.fromisoformat(since)
-        )
-    return [dict(r) for r in rows]
 
 
 @router.get("/chart/knee")

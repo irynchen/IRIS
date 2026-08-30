@@ -75,8 +75,6 @@ export const healthApi = {
   getInsights: () => api.get<HealthInsight[]>('/health/insights').then(r => r.data),
   getChartWeight: (days = 90) =>
     api.get<{ date: string; weight: number }[]>('/health/chart/weight', { params: { days } }).then(r => r.data),
-  getChartBP: (days = 30) =>
-    api.get('/health/chart/bp', { params: { days } }).then(r => r.data),
   getChartKnee: (days = 30) =>
     api.get('/health/chart/knee', { params: { days } }).then(r => r.data),
   getChartMood: (days = 30) =>

@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import create_tables
-from routers import health, day_plan, home, health_doctors, health_medications, goals, tasks, travel, dashboard, calendar, notifications, recurring, psychology, settings, shopping
+from routers import health, day_plan, home, health_doctors, health_medications, health_bp, goals, tasks, travel, dashboard, calendar, notifications, recurring, psychology, settings, shopping
 from auth import jwt as auth_jwt
 from email_service import scheduler_loop
 
@@ -37,6 +37,7 @@ app.include_router(day_plan.router)
 app.include_router(home.router)
 app.include_router(health_doctors.router)
 app.include_router(health_medications.router)
+app.include_router(health_bp.router)
 app.include_router(goals.router)
 app.include_router(tasks.router)
 app.include_router(travel.router)

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useHealthStore } from '../store/healthStore'
-import TodayForm from '../components/health/TodayForm'
+import TopicTabs from '../components/health/TopicTabs'
 import InsightCard from '../components/health/InsightCard'
 
 export default function HealthAppToday() {
@@ -51,7 +51,7 @@ export default function HealthAppToday() {
         </div>
       )}
 
-      <TodayForm />
+      <TopicTabs />
     </div>
   )
 }

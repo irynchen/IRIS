@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHealthStore } from '../store/healthStore'
-import TodayForm from '../components/health/TodayForm'
+import TopicTabs from '../components/health/TopicTabs'
 import HistoryList from '../components/health/HistoryList'
 import WeightChart from '../components/health/WeightChart'
-import BPChart from '../components/health/BPChart'
 import KneeChart from '../components/health/KneeChart'
 import MoodChart from '../components/health/MoodChart'
 import InsightCard from '../components/health/InsightCard'
@@ -111,7 +110,7 @@ export default function HealthPage() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'today' && <TodayForm />}
+      {activeTab === 'today' && <TopicTabs />}
 
       {activeTab === 'history' && <HistoryList />}
 
@@ -120,10 +119,6 @@ export default function HealthPage() {
           <Card>
             <h2 className="text-base font-semibold mb-3">⚖️ Gewicht</h2>
             <WeightChart />
-          </Card>
-          <Card>
-            <h2 className="text-base font-semibold mb-3">💊 Blutdruck</h2>
-            <BPChart />
           </Card>
           <Card>
             <h2 className="text-base font-semibold mb-3">🦵 Knie & Schritte</h2>
