@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { psychApi, PsychSession, PsychItem } from '../api/psychology'
 
-type Tab = 'jetzt' | 'pendulums' | 'future' | 'transurfing' | 'history'
+type Tab = 'jetzt' | 'pendulums' | 'future' | 'goals' | 'principles' | 'transurfing' | 'history'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -1261,12 +1261,508 @@ function HistoryTab() {
   )
 }
 
+// ── Вкладка «Мои цели» ────────────────────────────────────────────────────────
+
+type GoalPeriod = 'week' | 'month' | 'year' | '3y' | '5y' | '10y'
+
+const GOAL_PERIODS: { id: GoalPeriod; label: string; icon: string }[] = [
+  { id: 'week',  label: 'На неделю', icon: '🌱' },
+  { id: 'month', label: 'На месяц',  icon: '🌙' },
+  { id: 'year',  label: 'На год',    icon: '🌿' },
+  { id: '3y',    label: 'На 3 года', icon: '🌳' },
+  { id: '5y',    label: 'На 5 лет',  icon: '🏔' },
+  { id: '10y',   label: 'На 10 лет', icon: '🌟' },
+]
+
+interface GoalData {
+  title: string
+  description: string
+  period: GoalPeriod
+  started_at: string
+  status: 'active' | 'achieved'
+  achieved_at?: string
+}
+
+type GoalSort = 'deadline' | 'started' | 'title'
+
+const DAY_MS = 86_400_000
+
+function loadPref(key: string, fallback: string): string {
+  try { return localStorage.getItem(key) ?? fallback } catch { return fallback }
+}
+
+function savePref(key: string, value: string) {
+  try { localStorage.setItem(key, value) } catch { /* ignore */ }
+}
+
+function shortDate(iso: string) {
+  return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function humanDays(days: number) {
+  if (days < 60) return `${days} дн.`
+  if (days < 730) return `~${Math.round(days / 30)} мес.`
+  return `~${(days / 365).toFixed(1).replace('.0', '')} г.`
+}
+
+function goalDeadline(startIso: string, period: GoalPeriod): Date {
+  const d = new Date(startIso)
+  if (period === 'week') d.setDate(d.getDate() + 7)
+  else if (period === 'month') d.setMonth(d.getMonth() + 1)
+  else if (period === 'year') d.setFullYear(d.getFullYear() + 1)
+  else if (period === '3y') d.setFullYear(d.getFullYear() + 3)
+  else if (period === '5y') d.setFullYear(d.getFullYear() + 5)
+  else d.setFullYear(d.getFullYear() + 10)
+  return d
+}
+
+function goalStart(item: PsychItem): string {
+  return (item.data as unknown as GoalData).started_at || item.created_at
+}
+
+function GoalsTab() {
+  const [items, setItems] = useState<PsychItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [view, setView] = useState<'period' | 'list'>(() => loadPref('psych_goals_view', 'period') === 'list' ? 'list' : 'period')
+  const [sort, setSort] = useState<GoalSort>(() => {
+    const s = loadPref('psych_goals_sort', 'deadline')
+    return s === 'started' || s === 'title' ? s : 'deadline'
+  })
+  const [showHistory, setShowHistory] = useState(false)
+  const [editing, setEditing] = useState<number | null>(null)
+  const [editData, setEditData] = useState<GoalData | null>(null)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [period, setPeriod] = useState<GoalPeriod>('month')
+
+  useEffect(() => {
+    psychApi.getItems('goal').then((rows) => { setItems(rows); setLoading(false) }).catch(() => setLoading(false))
+  }, [])
+
+  function changeView(v: 'period' | 'list') { setView(v); savePref('psych_goals_view', v) }
+  function changeSort(s: GoalSort) { setSort(s); savePref('psych_goals_sort', s) }
+
+  async function addGoal() {
+    if (!title.trim()) return
+    const data: GoalData = {
+      title: title.trim(), description: description.trim(), period,
+      started_at: new Date().toISOString(), status: 'active',
+    }
+    const item = await psychApi.createItem('goal', data as unknown as Record<string, unknown>)
+    setItems((prev) => [item, ...prev])
+    setTitle(''); setDescription('')
+  }
+
+  async function replace(item: PsychItem, data: GoalData) {
+    const updated = await psychApi.updateItem(item.id, { data: data as unknown as Record<string, unknown> })
+    setItems((prev) => prev.map((i) => (i.id === item.id ? updated : i)))
+  }
+
+  function markAchieved(item: PsychItem) {
+    const d = item.data as unknown as GoalData
+    return replace(item, { ...d, started_at: goalStart(item), status: 'achieved', achieved_at: new Date().toISOString() })
+  }
+
+  function reopen(item: PsychItem) {
+    const { achieved_at: _drop, ...rest } = item.data as unknown as GoalData
+    return replace(item, { ...rest, started_at: goalStart(item), status: 'active' })
+  }
+
+  async function saveEdit(item: PsychItem) {
+    if (!editData || !editData.title.trim()) return
+    await replace(item, { ...editData, title: editData.title.trim(), started_at: goalStart(item) })
+    setEditing(null)
+  }
+
+  async function removeGoal(id: number) {
+    if (!window.confirm('Удалить цель?')) return
+    await psychApi.deleteItem(id)
+    setItems((prev) => prev.filter((i) => i.id !== id))
+  }
+
+  if (loading) return <p className="text-center text-[var(--color-text-muted)] py-8">Загружается...</p>
+
+  const goal = (i: PsychItem) => i.data as unknown as GoalData
+  const active = items.filter((i) => goal(i).status !== 'achieved')
+  const achieved = items
+    .filter((i) => goal(i).status === 'achieved')
+    .sort((a, b) => (goal(b).achieved_at || '').localeCompare(goal(a).achieved_at || ''))
+
+  function sortGoals(list: PsychItem[]) {
+    return [...list].sort((a, b) => {
+      if (sort === 'title') return goal(a).title.localeCompare(goal(b).title, 'ru')
+      if (sort === 'started') return goalStart(b).localeCompare(goalStart(a))
+      return goalDeadline(goalStart(a), goal(a).period).getTime() - goalDeadline(goalStart(b), goal(b).period).getTime()
+    })
+  }
+
+  const inputCls = 'w-full bg-[var(--color-bg)] border border-[var(--color-muted)] rounded-xl p-3 text-sm focus:outline-none focus:border-[var(--color-primary)]'
+  const periodLabel = (p: GoalPeriod) => GOAL_PERIODS.find((x) => x.id === p)?.label ?? p
+
+  function renderGoal(item: PsychItem) {
+    const d = goal(item)
+    const start = goalStart(item)
+    const deadline = goalDeadline(start, d.period)
+    const isDone = d.status === 'achieved'
+    const now = Date.now()
+    const total = deadline.getTime() - new Date(start).getTime()
+    const fraction = Math.min(1, Math.max(0, (now - new Date(start).getTime()) / total))
+    const daysLeft = Math.ceil((deadline.getTime() - now) / DAY_MS)
+    const overdue = !isDone && daysLeft < 0
+
+    if (editing === item.id && editData) {
+      return (
+        <Card key={item.id}>
+          <div className="space-y-3">
+            <input className={inputCls} value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} />
+            <textarea className={`${inputCls} resize-y`} rows={3} placeholder="Зачем мне это?" value={editData.description}
+              onChange={(e) => setEditData({ ...editData, description: e.target.value })} />
+            <select className={inputCls} value={editData.period} onChange={(e) => setEditData({ ...editData, period: e.target.value as GoalPeriod })}>
+              {GOAL_PERIODS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </select>
+            <p className="text-xs text-[var(--color-text-muted)]">Отсчёт идёт с {shortDate(start)} — дата постановки цели не меняется.</p>
+            <div className="flex gap-2">
+              <Btn onClick={() => saveEdit(item)}>Сохранить</Btn>
+              <Btn variant="ghost" onClick={() => setEditing(null)}>Отмена</Btn>
+            </div>
+          </div>
+        </Card>
+      )
+    }
+
+    let timing: React.ReactNode
+    if (isDone && d.achieved_at) {
+      const took = Math.max(0, Math.round((new Date(d.achieved_at).getTime() - new Date(start).getTime()) / DAY_MS))
+      const inTime = new Date(d.achieved_at).getTime() <= deadline.getTime()
+      timing = (
+        <span className="text-emerald-700">
+          ✓ Достигнута {shortDate(d.achieved_at)} · {took === 0 ? 'в тот же день' : `за ${humanDays(took)}`}
+          {' '}({inTime ? 'в срок' : 'с опозданием'})
+        </span>
+      )
+    } else if (overdue) {
+      timing = <span className="text-red-600">Срок прошёл {humanDays(-daysLeft)} назад</span>
+    } else {
+      timing = <span>Осталось {humanDays(daysLeft)} · до {shortDate(deadline.toISOString())}</span>
+    }
+
+    return (
+      <Card key={item.id} className={isDone ? 'opacity-80' : ''}>
+        <div className="flex items-start gap-3">
+          <button
+            onClick={() => (isDone ? reopen(item) : markAchieved(item))}
+            title={isDone ? 'Вернуть в активные' : 'Отметить как достигнутую'}
+            className={`mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs transition-colors ${
+              isDone ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white' : 'border-[var(--color-muted)] hover:border-[var(--color-primary)]'
+            }`}>
+            {isDone ? '✓' : ''}
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className={`font-medium ${isDone ? 'line-through text-[var(--color-text-muted)]' : ''}`}>{d.title}</p>
+            {d.description && <p className="text-sm text-[var(--color-text-muted)] mt-1 whitespace-pre-wrap">{d.description}</p>}
+            <p className="text-xs mt-2 text-[var(--color-text-muted)]">
+              {view === 'list' && <span className="mr-2">{periodLabel(d.period)} ·</span>}
+              Поставлена {shortDate(start)}
+            </p>
+            <p className="text-xs mt-0.5 text-[var(--color-text-muted)]">{timing}</p>
+            {!isDone && (
+              <div className="h-1.5 rounded-full bg-[var(--color-muted)] mt-2 overflow-hidden">
+                <div className={`h-full rounded-full ${overdue ? 'bg-red-400' : 'bg-[var(--color-primary)]'}`} style={{ width: `${fraction * 100}%` }} />
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-2 mt-3 justify-end">
+          <Btn variant="ghost" className="text-xs" onClick={() => { setEditing(item.id); setEditData({ ...d, started_at: start }) }}>✏️</Btn>
+          <Btn variant="danger" className="text-xs" onClick={() => removeGoal(item.id)}>✕</Btn>
+        </div>
+      </Card>
+    )
+  }
+
+  const sortedActive = sortGoals(active)
+
+  return (
+    <>
+      <Card>
+        <SectionTitle>Новая цель</SectionTitle>
+        <p className="text-xs text-[var(--color-text-muted)] mb-3">Срок начинает отсчитываться с момента, когда ты сохраняешь цель.</p>
+        <div className="space-y-2">
+          <input className={inputCls} placeholder="Моя цель..." value={title} onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addGoal()} />
+          <textarea className={`${inputCls} resize-y`} rows={2} placeholder="Зачем мне это? (необязательно)" value={description}
+            onChange={(e) => setDescription(e.target.value)} />
+          <div className="flex gap-2">
+            <select className={inputCls} value={period} onChange={(e) => setPeriod(e.target.value as GoalPeriod)}>
+              {GOAL_PERIODS.map((p) => <option key={p.id} value={p.id}>{p.icon} {p.label}</option>)}
+            </select>
+            <Btn onClick={addGoal} disabled={!title.trim()}>Добавить</Btn>
+          </div>
+        </div>
+      </Card>
+
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="flex rounded-xl overflow-hidden border border-[var(--color-muted)] text-xs">
+          {([['period', 'По периодам'], ['list', 'Списком']] as const).map(([v, label]) => (
+            <button key={v} onClick={() => changeView(v)}
+              className={`px-3 py-1.5 ${view === v ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-surface)] text-[var(--color-text-muted)]'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <select value={sort} onChange={(e) => changeSort(e.target.value as GoalSort)}
+          className="bg-[var(--color-surface)] border border-[var(--color-muted)] rounded-xl px-2 py-1.5 text-xs">
+          <option value="deadline">Сортировка: по сроку</option>
+          <option value="started">Сортировка: по дате постановки</option>
+          <option value="title">Сортировка: по названию</option>
+        </select>
+      </div>
+
+      {active.length === 0 && (
+        <p className="text-center text-sm text-[var(--color-text-muted)] py-6">Активных целей пока нет.</p>
+      )}
+
+      {view === 'list'
+        ? sortedActive.map(renderGoal)
+        : GOAL_PERIODS.map((p) => {
+            const group = sortedActive.filter((i) => goal(i).period === p.id)
+            if (group.length === 0) return null
+            return (
+              <div key={p.id} className="mb-2">
+                <h3 className="text-lg mb-2 mt-4" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                  {p.icon} {p.label} <span className="text-xs text-[var(--color-text-muted)]">({group.length})</span>
+                </h3>
+                {group.map(renderGoal)}
+              </div>
+            )
+          })}
+
+      {achieved.length > 0 && (
+        <div className="mt-6">
+          <button onClick={() => setShowHistory((v) => !v)}
+            className="w-full flex items-center justify-between text-left mb-3">
+            <h3 className="text-lg" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+              ✨ Достигнутые цели <span className="text-xs text-[var(--color-text-muted)]">({achieved.length})</span>
+            </h3>
+            <span className="text-xs text-[var(--color-text-muted)]">{showHistory ? '▲' : '▼'}</span>
+          </button>
+          {showHistory && achieved.map(renderGoal)}
+        </div>
+      )}
+    </>
+  )
+}
+
+// ── Вкладка «Мои принципы» ────────────────────────────────────────────────────
+
+interface PrincipleData {
+  title: string
+  description: string
+  category: string
+  order?: number
+}
+
+type PrincipleSort = 'manual' | 'title' | 'category' | 'date'
+
+function PrinciplesTab() {
+  const [items, setItems] = useState<PsychItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [sort, setSort] = useState<PrincipleSort>(() => {
+    const s = loadPref('psych_principles_sort', 'manual')
+    return s === 'title' || s === 'category' || s === 'date' ? s : 'manual'
+  })
+  const [filter, setFilter] = useState<string>('')
+  const [expanded, setExpanded] = useState<number | null>(null)
+  const [editing, setEditing] = useState<number | null>(null)
+  const [editData, setEditData] = useState<PrincipleData | null>(null)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('')
+
+  useEffect(() => {
+    psychApi.getItems('principle').then((rows) => { setItems(rows); setLoading(false) }).catch(() => setLoading(false))
+  }, [])
+
+  function changeSort(s: PrincipleSort) { setSort(s); savePref('psych_principles_sort', s) }
+
+  const pr = (i: PsychItem) => i.data as unknown as PrincipleData
+
+  async function addPrinciple() {
+    if (!title.trim()) return
+    const maxOrder = items.reduce((m, i, idx) => Math.max(m, pr(i).order ?? idx), -1)
+    const data: PrincipleData = { title: title.trim(), description: description.trim(), category: category.trim(), order: maxOrder + 1 }
+    const item = await psychApi.createItem('principle', data as unknown as Record<string, unknown>)
+    setItems((prev) => [item, ...prev])
+    setTitle(''); setDescription(''); setCategory('')
+  }
+
+  async function saveEdit(item: PsychItem) {
+    if (!editData || !editData.title.trim()) return
+    const updated = await psychApi.updateItem(item.id, {
+      data: { ...editData, title: editData.title.trim(), category: editData.category.trim() } as unknown as Record<string, unknown>,
+    })
+    setItems((prev) => prev.map((i) => (i.id === item.id ? updated : i)))
+    setEditing(null)
+  }
+
+  async function removePrinciple(id: number) {
+    if (!window.confirm('Удалить принцип?')) return
+    await psychApi.deleteItem(id)
+    setItems((prev) => prev.filter((i) => i.id !== id))
+  }
+
+  if (loading) return <p className="text-center text-[var(--color-text-muted)] py-8">Загружается...</p>
+
+  const byManual = [...items].sort((a, b) => {
+    const ao = pr(a).order ?? Number.MAX_SAFE_INTEGER
+    const bo = pr(b).order ?? Number.MAX_SAFE_INTEGER
+    return ao !== bo ? ao - bo : a.created_at.localeCompare(b.created_at)
+  })
+
+  async function move(item: PsychItem, dir: -1 | 1) {
+    const idx = byManual.findIndex((i) => i.id === item.id)
+    const target = idx + dir
+    if (target < 0 || target >= byManual.length) return
+    const reordered = [...byManual]
+    ;[reordered[idx], reordered[target]] = [reordered[target], reordered[idx]]
+    const changed = reordered
+      .map((i, n) => ({ i, n }))
+      .filter(({ i, n }) => pr(i).order !== n)
+    const updated = await Promise.all(changed.map(({ i, n }) =>
+      psychApi.updateItem(i.id, { data: { ...pr(i), order: n } as unknown as Record<string, unknown> })))
+    setItems((prev) => prev.map((i) => updated.find((u) => u.id === i.id) ?? i))
+  }
+
+  const categories = Array.from(new Set(items.map((i) => pr(i).category).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru'))
+
+  let visible = filter ? byManual.filter((i) => pr(i).category === filter) : byManual
+  if (sort === 'title') visible = [...visible].sort((a, b) => pr(a).title.localeCompare(pr(b).title, 'ru'))
+  else if (sort === 'date') visible = [...visible].sort((a, b) => b.created_at.localeCompare(a.created_at))
+  else if (sort === 'category') visible = [...visible].sort((a, b) =>
+    (pr(a).category || '￿').localeCompare(pr(b).category || '￿', 'ru'))
+
+  const inputCls = 'w-full bg-[var(--color-bg)] border border-[var(--color-muted)] rounded-xl p-3 text-sm focus:outline-none focus:border-[var(--color-primary)]'
+
+  return (
+    <>
+      <Card>
+        <SectionTitle>Новый принцип</SectionTitle>
+        <div className="space-y-2 mt-3">
+          <input className={inputCls} placeholder="Название принципа..." value={title} onChange={(e) => setTitle(e.target.value)} />
+          <textarea className={`${inputCls} resize-y`} rows={4} placeholder="Подробнее: что это значит для меня?" value={description}
+            onChange={(e) => setDescription(e.target.value)} />
+          <div className="flex gap-2">
+            <input className={inputCls} list="principle-categories" placeholder="Категория (необязательно)" value={category}
+              onChange={(e) => setCategory(e.target.value)} />
+            <Btn onClick={addPrinciple} disabled={!title.trim()}>Добавить</Btn>
+          </div>
+        </div>
+      </Card>
+
+      <datalist id="principle-categories">
+        {categories.map((c) => <option key={c} value={c} />)}
+      </datalist>
+
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <select value={sort} onChange={(e) => changeSort(e.target.value as PrincipleSort)}
+          className="bg-[var(--color-surface)] border border-[var(--color-muted)] rounded-xl px-2 py-1.5 text-xs">
+          <option value="manual">Сортировка: мой порядок</option>
+          <option value="title">Сортировка: по названию</option>
+          <option value="category">Сортировка: по категории</option>
+          <option value="date">Сортировка: сначала новые</option>
+        </select>
+        {sort === 'manual' && !filter && (
+          <span className="text-xs text-[var(--color-text-muted)]">Стрелками ↑↓ можно расставить по важности</span>
+        )}
+      </div>
+
+      {categories.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-none">
+          {['', ...categories].map((c) => (
+            <button key={c || 'all'} onClick={() => setFilter(c)}
+              className={`flex-shrink-0 px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
+                filter === c ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-surface)] border border-[var(--color-muted)] text-[var(--color-text-muted)]'
+              }`}>
+              {c || 'Все'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {visible.length === 0 && (
+        <p className="text-center text-sm text-[var(--color-text-muted)] py-6">Принципов пока нет.</p>
+      )}
+
+      {visible.map((item) => {
+        const d = pr(item)
+        const isOpen = expanded === item.id
+        const manualIdx = byManual.findIndex((i) => i.id === item.id)
+        const canMove = sort === 'manual' && !filter
+
+        if (editing === item.id && editData) {
+          return (
+            <Card key={item.id}>
+              <div className="space-y-3">
+                <input className={inputCls} value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} />
+                <textarea className={`${inputCls} resize-y`} rows={6} value={editData.description}
+                  onChange={(e) => setEditData({ ...editData, description: e.target.value })} />
+                <input className={inputCls} list="principle-categories" placeholder="Категория" value={editData.category}
+                  onChange={(e) => setEditData({ ...editData, category: e.target.value })} />
+                <div className="flex gap-2">
+                  <Btn onClick={() => saveEdit(item)}>Сохранить</Btn>
+                  <Btn variant="ghost" onClick={() => setEditing(null)}>Отмена</Btn>
+                </div>
+              </div>
+            </Card>
+          )
+        }
+
+        return (
+          <Card key={item.id}>
+            <div className="flex items-start gap-2">
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpanded(isOpen ? null : item.id)}>
+                <p className="font-medium">🧭 {d.title}</p>
+                {d.category && (
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] bg-[var(--color-muted)] text-[var(--color-text-muted)]">
+                    {d.category}
+                  </span>
+                )}
+              </div>
+              {canMove && (
+                <div className="flex flex-col flex-shrink-0">
+                  <button disabled={manualIdx === 0} onClick={() => move(item, -1)}
+                    className="px-2 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-20">▲</button>
+                  <button disabled={manualIdx === byManual.length - 1} onClick={() => move(item, 1)}
+                    className="px-2 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-20">▼</button>
+                </div>
+              )}
+            </div>
+            {isOpen && (
+              <div className="mt-3">
+                {d.description
+                  ? <p className="text-sm whitespace-pre-wrap leading-relaxed">{d.description}</p>
+                  : <p className="text-sm text-[var(--color-text-muted)]">Описания пока нет.</p>}
+                <div className="flex gap-2 mt-3 justify-end">
+                  <Btn variant="ghost" className="text-xs" onClick={() => { setEditing(item.id); setEditData({ ...d, category: d.category || '' }) }}>✏️ Изменить</Btn>
+                  <Btn variant="danger" className="text-xs" onClick={() => removePrinciple(item.id)}>✕</Btn>
+                </div>
+              </div>
+            )}
+          </Card>
+        )
+      })}
+    </>
+  )
+}
+
 // ── Главная страница ──────────────────────────────────────────────────────────
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'jetzt',       label: 'Сейчас',       icon: '🌊' },
   { id: 'pendulums',   label: 'Маятники',     icon: '🎭' },
   { id: 'future',      label: 'Будущая Я',    icon: '🌸' },
+  { id: 'goals',       label: 'Мои цели',     icon: '🎯' },
+  { id: 'principles',  label: 'Мои принципы', icon: '🧭' },
   { id: 'transurfing', label: 'Трансёрфинг',  icon: '✦' },
   { id: 'history',     label: 'История',      icon: '📋' },
 ]
@@ -1306,6 +1802,8 @@ export default function PsychologyPage() {
       {tab === 'jetzt'       && <JetztTab onSessionSaved={handleSessionSaved} />}
       {tab === 'pendulums'   && <PendulumsTab />}
       {tab === 'future'      && <FutureSelfTab />}
+      {tab === 'goals'       && <GoalsTab />}
+      {tab === 'principles'  && <PrinciplesTab />}
       {tab === 'transurfing' && <TranssurfingTab />}
       {tab === 'history'     && <HistoryTab key={historyKey} />}
     </div>
