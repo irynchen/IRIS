@@ -1,9 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@400;500;600&family=Unbounded:wght@500;600&family=Nunito:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design-Themes ─────────────────────────────────────────────────────────────
+   Umschalten über <html data-theme="classic|vivid|modern"> (siehe src/theme.ts).
+   Fast alle Komponenten nutzen die --color-* Variablen; Überschriften nutzen
+   style={{ fontFamily: 'var(--font-heading)' }}. Die Theme-Blöcke unten
+   überschreiben zusätzlich Rundungen, Glas-Effekt und Verläufe global. */
+
+/* 1) Klassisch — das ursprüngliche IRIS-Design (Olivgrün, Sand, Serifen) */
 :root {
   --color-bg: #F7F4EF;
   --color-surface: #FFFFFF;
@@ -15,17 +22,133 @@
   --color-text-muted: #7A7A7A;
   --radius-card: 16px;
   --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.07);
+  --font-heading: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --heading-size-adjust: none;
+}
+
+/* 2) Kreativ — farbiger Verlaufshintergrund, Glas-Karten, Violett→Pink */
+:root[data-theme="vivid"] {
+  --color-bg: rgba(255, 255, 255, 0.38);
+  --color-surface: rgba(255, 255, 255, 0.66);
+  --color-primary: #8B3DFF;
+  --color-secondary: #FFB347;
+  --color-accent: #FF4D9A;
+  --color-muted: rgba(139, 61, 255, 0.16);
+  --color-text: #2A1B3D;
+  --color-text-muted: #6E5A86;
+  --radius-card: 24px;
+  --shadow-card: 0 8px 32px rgba(139, 61, 255, 0.16);
+  --font-heading: 'Unbounded', 'Nunito', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+  --heading-size-adjust: 0.4;
+}
+
+/* 3) Modern — klar, monochrom, Schwarz/Weiß mit Indigo-Akzent */
+:root[data-theme="modern"] {
+  --color-bg: #F4F4F5;
+  --color-surface: #FFFFFF;
+  --color-primary: #18181B;
+  --color-secondary: #A1A1AA;
+  --color-accent: #6366F1;
+  --color-muted: #E4E4E7;
+  --color-text: #18181B;
+  --color-text-muted: #71717A;
+  --radius-card: 12px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --font-heading: 'Manrope', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --heading-size-adjust: 0.4;
+}
+
+html {
+  background-color: #F7F4EF;
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-heading);
+}
+
+/* Überschriften mit Display-Schrift auf die optische Größe von Cormorant bringen */
+h1, h2, h3, [style*="--font-heading"] {
+  font-size-adjust: var(--heading-size-adjust);
+}
+
+/* ── Kreativ: Details ── */
+[data-theme="vivid"] {
+  background-color: #F6F0FF;
+}
+[data-theme="vivid"] body {
+  background: transparent;
+}
+[data-theme="vivid"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 8% 12%, #FFB3D9 0, transparent 38%),
+    radial-gradient(circle at 92% 8%, #B9A6FF 0, transparent 42%),
+    radial-gradient(circle at 75% 92%, #9EE7FF 0, transparent 42%),
+    radial-gradient(circle at 12% 88%, #FFE29A 0, transparent 38%),
+    linear-gradient(160deg, #FCEBFF 0%, #EEE6FF 50%, #E4F6FF 100%);
+}
+[data-theme="vivid"] .bg-\[var\(--color-surface\)\].border-\[var\(--color-muted\)\] {
+  border-color: rgba(255, 255, 255, 0.8);
+}
+/* Blur nur auf fixierten Ebenen (Navigation, Sheets): backdrop-filter auf normalen
+   Karten würde dort enthaltene position:fixed-Dialoge einsperren. */
+[data-theme="vivid"] .fixed.bg-\[var\(--color-surface\)\],
+[data-theme="vivid"] .fixed .bg-\[var\(--color-surface\)\] {
+  background-color: rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+}
+[data-theme="vivid"] .sticky.bg-\[var\(--color-bg\)\] {
+  background-color: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+[data-theme="vivid"] .bg-\[var\(--color-primary\)\] {
+  background-image: linear-gradient(135deg, #8B3DFF 0%, #D63DF0 55%, #FF4D9A 100%);
+}
+[data-theme="vivid"] button.bg-\[var\(--color-primary\)\],
+[data-theme="vivid"] a.bg-\[var\(--color-primary\)\] {
+  box-shadow: 0 6px 18px rgba(139, 61, 255, 0.32);
+}
+[data-theme="vivid"] h1.text-\[var\(--color-primary\)\] {
+  background-image: linear-gradient(120deg, #8B3DFF 0%, #FF4D9A 60%, #FF9F43 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme="vivid"] .rounded-2xl { border-radius: 24px; }
+[data-theme="vivid"] .rounded-xl  { border-radius: 16px; }
+[data-theme="vivid"] .rounded-lg  { border-radius: 12px; }
+
+/* ── Modern: Details ── */
+[data-theme="modern"] {
+  background-color: #F4F4F5;
+}
+[data-theme="modern"] h1,
+[data-theme="modern"] h2,
+[data-theme="modern"] h3,
+[data-theme="modern"] [style*="--font-heading"] {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+[data-theme="modern"] .rounded-2xl { border-radius: 12px; }
+[data-theme="modern"] .rounded-xl  { border-radius: 8px; }
+[data-theme="modern"] .rounded-lg  { border-radius: 6px; }
+[data-theme="modern"] .bg-\[var\(--color-surface\)\] {
+  box-shadow: var(--shadow-card);
 }
 
 * {

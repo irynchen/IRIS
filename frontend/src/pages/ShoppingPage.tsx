@@ -457,7 +457,7 @@ export default function ShoppingPage() {
     <div className="max-w-2xl mx-auto pb-32">
       {/* Header */}
       <div className="px-4 pt-6 pb-4">
-        <h1 className="text-3xl font-semibold text-[var(--color-primary)]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+        <h1 className="text-3xl font-semibold text-[var(--color-primary)]" style={{ fontFamily: 'var(--font-heading)' }}>
           Einkaufszettel
         </h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-0.5">

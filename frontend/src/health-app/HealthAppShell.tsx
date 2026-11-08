@@ -31,7 +31,7 @@ export default function HealthAppShell({ children }: { children: React.ReactNode
   return (
     <div className="min-h-screen bg-[var(--color-bg)] flex flex-col">
       <header className="px-5 pt-6 pb-4 bg-[var(--color-surface)] border-b border-[var(--color-muted)]">
-        <h1 className="text-4xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+        <h1 className="text-4xl" style={{ fontFamily: 'var(--font-heading)' }}>
           💚 Gesundheit
         </h1>
       </header>

@@ -35,7 +35,7 @@ export default function DashboardPage() {
 
       {/* Greeting */}
       <div className="mb-5">
-        <h1 className="text-3xl mb-1" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+        <h1 className="text-3xl mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
           {getGreeting()}
         </h1>
         <p className="text-[var(--color-text-muted)] text-sm capitalize">{formatDate()}</p>

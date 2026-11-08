@@ -98,7 +98,7 @@ export default function TravelPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 pt-4 pb-3">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+          <h1 className="text-2xl" style={{ fontFamily: 'var(--font-heading)' }}>
             ✈️ Reisen
           </h1>
           <button
@@ -150,7 +150,7 @@ export default function TravelPage() {
         ) : displayed.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-center">
             <span className="text-5xl">🗺️</span>
-            <p className="text-[var(--color-text-muted)]" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.4rem' }}>
+            <p className="text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem' }}>
               {filterStatus ? 'Keine Einträge in diesem Status' : 'Noch keine Reiseideen'}
             </p>
             <p className="text-sm text-[var(--color-text-muted)]">Tippe auf + um eine Idee hinzuzufügen</p>

@@ -21,7 +21,7 @@ function PlaceholderPage({ title, emoji }: { title: string; emoji: string }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-8 text-center">
       <span className="text-6xl">{emoji}</span>
-      <h2 className="text-3xl text-[var(--color-text-muted)]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+      <h2 className="text-3xl text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-heading)' }}>
         {title}
       </h2>
       <p className="text-[var(--color-text-muted)] bg-[var(--color-muted)] px-4 py-2 rounded-full text-sm">

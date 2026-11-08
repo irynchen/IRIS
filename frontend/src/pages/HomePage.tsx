@@ -161,7 +161,7 @@ export default function HomePage() {
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 pt-4 pb-3">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>Zuhause</h1>
+          <h1 className="text-2xl" style={{ fontFamily: 'var(--font-heading)' }}>Zuhause</h1>
           <button
             onClick={() => { setEditTask(undefined); setFormDefaultRoom(rooms[0]?.id); setShowForm(true) }}
             className="bg-[var(--color-primary)] text-white rounded-full w-9 h-9 flex items-center justify-center text-lg font-light hover:opacity-90 transition-opacity"

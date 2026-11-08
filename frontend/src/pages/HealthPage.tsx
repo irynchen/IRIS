@@ -32,7 +32,7 @@ export default function HealthPage() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      <h1 className="text-3xl mb-4" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+      <h1 className="text-3xl mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
         💚 Gesundheit
       </h1>
 

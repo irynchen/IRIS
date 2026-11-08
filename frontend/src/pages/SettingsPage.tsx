@@ -10,7 +10,7 @@ function Card({ children }: { children: React.ReactNode }) {
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-xl mb-1 text-[var(--color-text)]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{children}</h3>
+  return <h3 className="text-xl mb-1 text-[var(--color-text)]" style={{ fontFamily: 'var(--font-heading)' }}>{children}</h3>
 }
 
 export default function SettingsPage() {
@@ -52,7 +52,7 @@ export default function SettingsPage() {
   return (
     <div className="max-w-xl mx-auto pb-24 md:pb-8 px-4 pt-6">
       <div className="mb-6">
-        <h1 className="text-4xl text-[var(--color-primary)]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+        <h1 className="text-4xl text-[var(--color-primary)]" style={{ fontFamily: 'var(--font-heading)' }}>
           Einstellungen
         </h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-1">Konfiguration der App</p>

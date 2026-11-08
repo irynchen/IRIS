@@ -94,6 +94,30 @@ Die Tab-Leiste ist ein Grid ohne Scrollen (Handy 4+3, ab `md` alle 7 in einer Ze
   (`localStorage`: `psych_principles_sort`). Kategorie-Filter erscheint, sobald Kategorien existieren.
 - Beim manuellen Verschieben werden nur die geänderten `order`-Werte per PATCH `/api/psychology/items/{id}` geschrieben.
 
+## Design-Themes (Klassisch / Kreativ / Modern)
+
+Ein Button „Design: …" (Komponente `frontend/src/components/ui/ThemeToggle.tsx`) schaltet bei jedem Klick
+zum nächsten Design: Klassisch → Kreativ → Modern → Klassisch. Desktop: in der Seitenleiste unter dem IRIS-Logo;
+Handy: unten „⋯ Mehr" → ganz unten im Menü. Die Wahl wird **pro Gerät** im `localStorage` (`iris_theme`) gespeichert
+und in `main.tsx` vor dem ersten Rendern angewendet (`src/theme.ts`, setzt `<html data-theme="…">` und `theme-color`).
+
+| Theme | `data-theme` | Charakter |
+|---|---|---|
+| Klassisch | `classic` (Default) | Ursprüngliches IRIS: Olivgrün/Sand, Cormorant Garamond + DM Sans, Radius 16 px |
+| Kreativ | `vivid` | Pastell-Verlaufshintergrund mit Farbflecken, halbtransparente Karten, Verlauf Violett→Pink auf Buttons/aktiven Elementen und Seitentiteln, Unbounded + Nunito, Radius 24 px |
+| Modern | `modern` | Monochrom Zink/Schwarz mit Indigo-Akzent, Manrope (fett, enge Laufweite), kleine Radien 8–12 px, feine Schatten |
+
+Technik (alles in `frontend/src/styles/globals.css`):
+- Farben, Schatten und Schriften sind CSS-Variablen (`--color-*`, `--font-heading`, `--font-body`), pro Theme überschrieben.
+- Überschriften nutzen `style={{ fontFamily: 'var(--font-heading)' }}` (früher fest `Cormorant Garamond`).
+  `font-size-adjust` gleicht die optische Größe der breiteren Schriften an Cormorant an.
+- Theme-spezifische Overrides greifen global auf Tailwind-Klassen zu (z. B. `[data-theme="vivid"] .rounded-2xl`,
+  `.bg-\[var\(--color-primary\)\]` → Verlauf). Neue Komponenten bekommen die Themes automatisch, solange sie
+  die `--color-*`-Variablen statt fester Farben benutzen.
+- Im Kreativ-Theme nur fixierte Ebenen (Navigation, Sheets) mit `backdrop-filter` — auf normalen Karten würde es
+  darin enthaltene `position: fixed`-Dialoge einsperren.
+- Pastellfarbene Akzentblöcke mit festen Tailwind-Farben (z. B. `bg-rose-50` in „Маятники") bleiben in allen Themes gleich.
+
 ## Lokale Entwicklung
 
 ```bash

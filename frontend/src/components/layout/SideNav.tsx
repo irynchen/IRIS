@@ -2,6 +2,7 @@ import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useNotificationStore } from '../../store/notificationStore'
+import ThemeToggle from '../ui/ThemeToggle'
 
 const MAIN_ITEMS = [
   { to: '/', icon: '✦', label: 'Übersicht', end: true },
@@ -53,7 +54,7 @@ export default function SideNav() {
     <nav className="fixed left-0 top-0 bottom-0 w-60 bg-[var(--color-surface)] border-r border-[var(--color-muted)] flex flex-col z-50">
       <div className="px-6 py-6">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-semibold text-[var(--color-primary)]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+          <h1 className="text-3xl font-semibold text-[var(--color-primary)]" style={{ fontFamily: 'var(--font-heading)' }}>
             IRIS
           </h1>
           {badge && (
@@ -63,6 +64,7 @@ export default function SideNav() {
           )}
         </div>
         <p className="text-xs text-[var(--color-text-muted)] mt-1">Leben im Gleichgewicht</p>
+        <ThemeToggle className="w-full mt-4" />
       </div>
 
       <div className="flex-1 px-3 overflow-y-auto">

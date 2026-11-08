@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useNotificationStore } from '../../store/notificationStore'
+import ThemeToggle from '../ui/ThemeToggle'
 
 const MAIN_ITEMS = [
   { to: '/', icon: '✦', label: 'Übersicht', end: true },
@@ -63,6 +64,7 @@ export default function BottomNav() {
                 </button>
               ))}
             </div>
+            <ThemeToggle className="w-full mb-2 py-3" />
           </div>
         </div>
       )}

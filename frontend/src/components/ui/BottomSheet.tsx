@@ -26,7 +26,7 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
         {/* Sticky header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
           {title && (
-            <h2 className="text-xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+            <h2 className="text-xl" style={{ fontFamily: 'var(--font-heading)' }}>
               {title}
             </h2>
           )}

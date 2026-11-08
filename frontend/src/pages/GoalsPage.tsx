@@ -427,7 +427,7 @@ function MonthTab({
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">Monatsplan</p>
-            <h2 className="text-xl font-semibold" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+            <h2 className="text-xl font-semibold" style={{ fontFamily: 'var(--font-heading)' }}>
               {MONTH_NAMES[month]} {year}
             </h2>
           </div>
@@ -591,7 +591,7 @@ export default function GoalsPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 pt-4 pb-3">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+          <h1 className="text-2xl" style={{ fontFamily: 'var(--font-heading)' }}>
             🧭 Life Compass
           </h1>
           {(activeTab === 'goals' || activeTab === 'month') && (

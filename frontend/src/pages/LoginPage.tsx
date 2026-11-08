@@ -38,7 +38,7 @@ export default function LoginPage() {
       <div className="mb-10 text-center">
         <h1
           className="text-6xl font-semibold text-[var(--color-primary)] mb-2"
-          style={{ fontFamily: 'Cormorant Garamond, serif', letterSpacing: '0.15em' }}
+          style={{ fontFamily: 'var(--font-heading)', letterSpacing: '0.15em' }}
         >
           IRIS
         </h1>

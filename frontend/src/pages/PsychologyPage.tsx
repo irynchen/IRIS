@@ -16,7 +16,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-xl mb-1" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{children}</h3>
+  return <h3 className="text-xl mb-1" style={{ fontFamily: 'var(--font-heading)' }}>{children}</h3>
 }
 
 function CollapsibleCard({ title, subtitle, children, defaultOpen = true }: {
@@ -30,7 +30,7 @@ function CollapsibleCard({ title, subtitle, children, defaultOpen = true }: {
         className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-[var(--color-muted)]/30 transition-colors"
       >
         <div>
-          <h3 className="text-xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{title}</h3>
+          <h3 className="text-xl" style={{ fontFamily: 'var(--font-heading)' }}>{title}</h3>
           {subtitle && <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{subtitle}</p>}
         </div>
         <span className="text-xs text-[var(--color-text-muted)] ml-4 flex-shrink-0">{open ? '▲' : '▼'}</span>
@@ -338,7 +338,7 @@ function JetztTab({ onSessionSaved }: { onSessionSaved: () => void }) {
         className="w-full mb-4 p-5 bg-rose-50 border-2 border-rose-200 rounded-2xl text-left hover:border-rose-400 transition-colors group">
         <div className="flex items-center gap-3 mb-2">
           <span className="text-3xl">🌊</span>
-          <span className="text-xl font-semibold text-rose-800" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+          <span className="text-xl font-semibold text-rose-800" style={{ fontFamily: 'var(--font-heading)' }}>
             Меня накрыло
           </span>
         </div>
@@ -349,7 +349,7 @@ function JetztTab({ onSessionSaved }: { onSessionSaved: () => void }) {
         className="w-full p-5 bg-amber-50 border-2 border-amber-200 rounded-2xl text-left hover:border-amber-400 transition-colors group">
         <div className="flex items-center gap-3 mb-2">
           <span className="text-3xl">⚖️</span>
-          <span className="text-xl font-semibold text-amber-800" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+          <span className="text-xl font-semibold text-amber-800" style={{ fontFamily: 'var(--font-heading)' }}>
             Снижение важности
           </span>
         </div>
@@ -853,7 +853,7 @@ function TranssurfingTab() {
         <div className="flex gap-2 items-stretch">
           <button onClick={nextBuiltIn}
             className="flex-1 p-4 bg-amber-50 border border-amber-200 rounded-xl text-center italic text-amber-900 hover:border-amber-400 transition-colors"
-            style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1.1rem' }}>
+            style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem' }}>
             {displayAffirmation}
           </button>
           <button
@@ -883,7 +883,7 @@ function TranssurfingTab() {
                     <button
                       onClick={() => selectAffirmation(a)}
                       className="flex-1 text-left p-3 bg-violet-50 border border-violet-200 rounded-xl text-sm italic text-violet-900 hover:bg-violet-100 hover:border-violet-400 transition-colors"
-                      style={{ fontFamily: 'Cormorant Garamond, serif' }}
+                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {a}
                     </button>
@@ -924,7 +924,7 @@ function TranssurfingTab() {
                     <button
                       onClick={() => selectAffirmation(text)}
                       className="flex-1 text-left text-sm italic"
-                      style={{ fontFamily: 'Cormorant Garamond, serif' }}
+                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {text}
                     </button>
@@ -979,7 +979,7 @@ function TranssurfingTab() {
             <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-2"><span>Спокойно</span><span>Критично</span></div>
             <input type="range" min={1} max={10} value={sitData.importance} className="w-full accent-[var(--color-primary)]"
               onChange={(e) => setSitData({ ...sitData, importance: +e.target.value })} />
-            <p className="text-4xl text-center font-bold text-[var(--color-primary)] my-2" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{sitData.importance}</p>
+            <p className="text-4xl text-center font-bold text-[var(--color-primary)] my-2" style={{ fontFamily: 'var(--font-heading)' }}>{sitData.importance}</p>
             <p className="text-sm text-center text-[var(--color-text-muted)] mb-4">{SCALE_TEXTS[sitData.importance]}</p>
             <div className="flex justify-between">
               <Btn variant="ghost" onClick={() => setSitStep(0)}>← Назад</Btn>
@@ -1543,7 +1543,7 @@ function GoalsTab() {
             if (group.length === 0) return null
             return (
               <div key={p.id} className="mb-2">
-                <h3 className="text-lg mb-2 mt-4" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                <h3 className="text-lg mb-2 mt-4" style={{ fontFamily: 'var(--font-heading)' }}>
                   {p.icon} {p.label} <span className="text-xs text-[var(--color-text-muted)]">({group.length})</span>
                 </h3>
                 {group.map(renderGoal)}
@@ -1555,7 +1555,7 @@ function GoalsTab() {
         <div className="mt-6">
           <button onClick={() => setShowHistory((v) => !v)}
             className="w-full flex items-center justify-between text-left mb-3">
-            <h3 className="text-lg" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+            <h3 className="text-lg" style={{ fontFamily: 'var(--font-heading)' }}>
               ✨ Достигнутые цели <span className="text-xs text-[var(--color-text-muted)]">({achieved.length})</span>
             </h3>
             <span className="text-xs text-[var(--color-text-muted)]">{showHistory ? '▲' : '▼'}</span>
@@ -1797,7 +1797,7 @@ export default function PsychologyPage() {
   return (
     <div className="max-w-2xl mx-auto pb-24 md:pb-8 px-4 pt-6">
       <div className="mb-6">
-        <h1 className="text-4xl text-[var(--color-primary)]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+        <h1 className="text-4xl text-[var(--color-primary)]" style={{ fontFamily: 'var(--font-heading)' }}>
           Внутренняя работа
         </h1>
         <p className="text-sm text-[var(--color-text-muted)] mt-1">Психологические практики — трансёрфинг, АКТ, работа с собой</p>

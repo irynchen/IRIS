@@ -150,7 +150,7 @@ export default function AreaTaskPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+          <h1 className="text-2xl" style={{ fontFamily: 'var(--font-heading)' }}>
             {areaInfo ? `${areaInfo.icon ?? ''} ${areaInfo.name}` : '…'}
           </h1>
           <button

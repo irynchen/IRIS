@@ -180,7 +180,7 @@ function RecurringManager({ onClose }: { onClose: () => void }) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md bg-[var(--color-surface)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[80vh] mb-16 md:mb-0">
         <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
-          <h2 className="text-xl" style={{fontFamily:'Cormorant Garamond, serif'}}>Wiederkehrende Einträge</h2>
+          <h2 className="text-xl" style={{fontFamily:'var(--font-heading)'}}>Wiederkehrende Einträge</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-xl">×</button>
         </div>
 
@@ -498,7 +498,7 @@ export default function CalendarPage() {
       {/* Sticky header */}
       <div className="sticky top-0 z-10 bg-[var(--color-bg)] border-b border-[var(--color-muted)] px-4 pt-4 pb-3">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl" style={{fontFamily:'Cormorant Garamond, serif'}}>Kalender</h1>
+          <h1 className="text-2xl" style={{fontFamily:'var(--font-heading)'}}>Kalender</h1>
           <div className="flex items-center gap-2">
           <button onClick={()=>setShowRec(true)}
             className="text-xs px-2.5 py-1.5 rounded-lg border border-[var(--color-muted)] text-[var(--color-text-muted)] hover:bg-[var(--color-muted)] transition-colors"

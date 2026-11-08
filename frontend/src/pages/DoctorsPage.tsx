@@ -477,7 +477,7 @@ export default function DoctorsPage() {
           </button>
         </div>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+          <h1 className="text-2xl" style={{ fontFamily: 'var(--font-heading)' }}>
             Meine Ärzte
           </h1>
           <button
