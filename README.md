@@ -70,6 +70,8 @@ Speichert alles in zwei generischen Tabellen mit JSONB-Feld `data` (Router: `bac
 `psych_sessions` (Verlauf der Sitzungen) und `psych_items` (typisierte Einträge, Feld `type`).
 
 Tabs: Сейчас · Маятники · Будущая Я · **Цели** · **Принципы** · Трансёрфинг · История.
+In „Цели" und „Принципы" ist das Eingabeformular hinter einem gestrichelten „＋"-Button (`AddButton`) eingeklappt,
+öffnet sich per Klick und klappt nach dem Speichern wieder zu — so stehen die vorhandenen Einträge oben.
 Die Tab-Leiste ist ein Grid ohne Scrollen (Handy 4+3, ab `md` alle 7 in einer Zeile, Icon über Label).
 
 ### Tab „Мои цели" (`psych_items.type = 'goal'`)

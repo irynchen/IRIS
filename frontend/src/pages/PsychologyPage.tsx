@@ -58,6 +58,16 @@ function Btn({ children, onClick, variant = 'primary', className = '', disabled 
   )
 }
 
+function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick}
+      className="w-full flex items-center justify-center gap-2 py-3 mb-4 rounded-2xl border-2 border-dashed border-[var(--color-primary)]/50 text-[var(--color-primary)] text-sm font-medium hover:bg-[var(--color-primary)]/10 hover:border-[var(--color-primary)] transition-colors">
+      <span className="text-lg leading-none">＋</span>
+      <span>{label}</span>
+    </button>
+  )
+}
+
 function StepDots({ total, current }: { total: number; current: number }) {
   return (
     <div className="flex gap-1.5 mb-5">
@@ -1329,6 +1339,7 @@ function GoalsTab() {
     return s === 'started' || s === 'title' ? s : 'deadline'
   })
   const [showHistory, setShowHistory] = useState(false)
+  const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<number | null>(null)
   const [editData, setEditData] = useState<GoalData | null>(null)
   const [title, setTitle] = useState('')
@@ -1351,6 +1362,7 @@ function GoalsTab() {
     const item = await psychApi.createItem('goal', data as unknown as Record<string, unknown>)
     setItems((prev) => [item, ...prev])
     setTitle(''); setDescription('')
+    setShowForm(false)
   }
 
   async function replace(item: PsychItem, data: GoalData) {
@@ -1484,11 +1496,12 @@ function GoalsTab() {
 
   return (
     <>
-      <Card>
+      {!showForm && <AddButton label="Новая цель" onClick={() => setShowForm(true)} />}
+      {showForm && <Card>
         <SectionTitle>Новая цель</SectionTitle>
         <p className="text-xs text-[var(--color-text-muted)] mb-3">Срок начинает отсчитываться с момента, когда ты сохраняешь цель.</p>
         <div className="space-y-2">
-          <input className={inputCls} placeholder="Моя цель..." value={title} onChange={(e) => setTitle(e.target.value)}
+          <input autoFocus className={inputCls} placeholder="Моя цель..." value={title} onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addGoal()} />
           <textarea className={`${inputCls} resize-y`} rows={2} placeholder="Зачем мне это? (необязательно)" value={description}
             onChange={(e) => setDescription(e.target.value)} />
@@ -1498,8 +1511,9 @@ function GoalsTab() {
             </select>
             <Btn onClick={addGoal} disabled={!title.trim()}>Добавить</Btn>
           </div>
+          <Btn variant="ghost" className="w-full" onClick={() => setShowForm(false)}>Отмена</Btn>
         </div>
-      </Card>
+      </Card>}
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <div className="flex rounded-xl overflow-hidden border border-[var(--color-muted)] text-xs">
@@ -1572,6 +1586,7 @@ function PrinciplesTab() {
     return s === 'title' || s === 'category' || s === 'date' ? s : 'manual'
   })
   const [filter, setFilter] = useState<string>('')
+  const [showForm, setShowForm] = useState(false)
   const [expanded, setExpanded] = useState<number | null>(null)
   const [editing, setEditing] = useState<number | null>(null)
   const [editData, setEditData] = useState<PrincipleData | null>(null)
@@ -1594,6 +1609,7 @@ function PrinciplesTab() {
     const item = await psychApi.createItem('principle', data as unknown as Record<string, unknown>)
     setItems((prev) => [item, ...prev])
     setTitle(''); setDescription(''); setCategory('')
+    setShowForm(false)
   }
 
   async function saveEdit(item: PsychItem) {
@@ -1645,10 +1661,11 @@ function PrinciplesTab() {
 
   return (
     <>
-      <Card>
+      {!showForm && <AddButton label="Новый принцип" onClick={() => setShowForm(true)} />}
+      {showForm && <Card>
         <SectionTitle>Новый принцип</SectionTitle>
         <div className="space-y-2 mt-3">
-          <input className={inputCls} placeholder="Название принципа..." value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input autoFocus className={inputCls} placeholder="Название принципа..." value={title} onChange={(e) => setTitle(e.target.value)} />
           <textarea className={`${inputCls} resize-y`} rows={4} placeholder="Подробнее: что это значит для меня?" value={description}
             onChange={(e) => setDescription(e.target.value)} />
           <div className="flex gap-2">
@@ -1656,8 +1673,9 @@ function PrinciplesTab() {
               onChange={(e) => setCategory(e.target.value)} />
             <Btn onClick={addPrinciple} disabled={!title.trim()}>Добавить</Btn>
           </div>
+          <Btn variant="ghost" className="w-full" onClick={() => setShowForm(false)}>Отмена</Btn>
         </div>
-      </Card>
+      </Card>}
 
       <datalist id="principle-categories">
         {categories.map((c) => <option key={c} value={c} />)}
