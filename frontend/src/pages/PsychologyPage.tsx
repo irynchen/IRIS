@@ -1761,8 +1761,8 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'jetzt',       label: 'Сейчас',       icon: '🌊' },
   { id: 'pendulums',   label: 'Маятники',     icon: '🎭' },
   { id: 'future',      label: 'Будущая Я',    icon: '🌸' },
-  { id: 'goals',       label: 'Мои цели',     icon: '🎯' },
-  { id: 'principles',  label: 'Мои принципы', icon: '🧭' },
+  { id: 'goals',       label: 'Цели',         icon: '🎯' },
+  { id: 'principles',  label: 'Принципы',     icon: '🧭' },
   { id: 'transurfing', label: 'Трансёрфинг',  icon: '✦' },
   { id: 'history',     label: 'История',      icon: '📋' },
 ]
@@ -1785,15 +1785,15 @@ export default function PsychologyPage() {
         <p className="text-sm text-[var(--color-text-muted)] mt-1">Психологические практики — трансёрфинг, АКТ, работа с собой</p>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto pb-1 mb-6 scrollbar-none">
+      <div className="grid grid-cols-4 md:grid-cols-7 gap-1.5 mb-6">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`flex flex-col items-center justify-center gap-1 px-1 py-2.5 rounded-xl text-xs font-medium leading-tight text-center transition-colors ${
               tab === t.id
                 ? 'bg-[var(--color-primary)] text-white'
                 : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
             }`}>
-            <span>{t.icon}</span>
+            <span className="text-lg leading-none">{t.icon}</span>
             <span>{t.label}</span>
           </button>
         ))}

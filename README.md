@@ -69,7 +69,8 @@ Erst prüfen: 401 im Log = abgelaufener Token (kein DB-Problem). Dann DNS (`nslo
 Speichert alles in zwei generischen Tabellen mit JSONB-Feld `data` (Router: `backend/routers/psychology.py`):
 `psych_sessions` (Verlauf der Sitzungen) und `psych_items` (typisierte Einträge, Feld `type`).
 
-Tabs: Сейчас · Маятники · Будущая Я · **Мои цели** · **Мои принципы** · Трансёрфинг · История.
+Tabs: Сейчас · Маятники · Будущая Я · **Цели** · **Принципы** · Трансёрфинг · История.
+Die Tab-Leiste ist ein Grid ohne Scrollen (Handy 4+3, ab `md` alle 7 in einer Zeile, Icon über Label).
 
 ### Tab „Мои цели" (`psych_items.type = 'goal'`)
 
