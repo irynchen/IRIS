@@ -1,12 +1,13 @@
 // Design-Themes: werden über <html data-theme="..."> umgeschaltet, die Werte stehen in styles/globals.css.
 // Gespeichert pro Gerät im localStorage.
 
-export type ThemeId = 'classic' | 'vivid' | 'modern'
+export type ThemeId = 'classic' | 'vivid' | 'modern' | 'dark'
 
 export const THEMES: { id: ThemeId; label: string; icon: string; metaColor: string }[] = [
   { id: 'classic', label: 'Klassisch', icon: '🏛', metaColor: '#6B8F71' },
   { id: 'vivid',   label: 'Kreativ',   icon: '🎨', metaColor: '#8B3DFF' },
   { id: 'modern',  label: 'Modern',    icon: '◼️', metaColor: '#18181B' },
+  { id: 'dark',    label: 'Abend',     icon: '🌙', metaColor: '#121316' },
 ]
 
 const STORAGE_KEY = 'iris_theme'
@@ -14,7 +15,7 @@ const STORAGE_KEY = 'iris_theme'
 export function getTheme(): ThemeId {
   try {
     const t = localStorage.getItem(STORAGE_KEY)
-    if (t === 'vivid' || t === 'modern') return t
+    if (t === 'vivid' || t === 'modern' || t === 'dark') return t
   } catch { /* ignore */ }
   return 'classic'
 }

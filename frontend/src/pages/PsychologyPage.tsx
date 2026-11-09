@@ -61,7 +61,7 @@ function Btn({ children, onClick, variant = 'primary', className = '', disabled 
 function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="w-full flex items-center justify-center gap-2 py-3 mb-4 rounded-2xl border-2 border-dashed border-[var(--color-primary)]/50 text-[var(--color-primary)] text-sm font-medium hover:bg-[var(--color-primary)]/10 hover:border-[var(--color-primary)] transition-colors">
+      className="w-full flex items-center justify-center gap-2 py-3 mb-4 rounded-2xl border-2 border-dashed border-[var(--color-muted)] text-[var(--color-primary)] text-sm font-medium hover:bg-[var(--color-primary)]/10 hover:border-[var(--color-primary)] transition-colors">
       <span className="text-lg leading-none">＋</span>
       <span>{label}</span>
     </button>

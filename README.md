@@ -94,10 +94,10 @@ Die Tab-Leiste ist ein Grid ohne Scrollen (Handy 4+3, ab `md` alle 7 in einer Ze
   (`localStorage`: `psych_principles_sort`). Kategorie-Filter erscheint, sobald Kategorien existieren.
 - Beim manuellen Verschieben werden nur die geänderten `order`-Werte per PATCH `/api/psychology/items/{id}` geschrieben.
 
-## Design-Themes (Klassisch / Kreativ / Modern)
+## Design-Themes (Klassisch / Kreativ / Modern / Abend)
 
 Ein Button „Design: …" (Komponente `frontend/src/components/ui/ThemeToggle.tsx`) schaltet bei jedem Klick
-zum nächsten Design: Klassisch → Kreativ → Modern → Klassisch. Desktop: in der Seitenleiste unter dem IRIS-Logo;
+zum nächsten Design: Klassisch → Kreativ → Modern → Abend → Klassisch. Desktop: in der Seitenleiste unter dem IRIS-Logo;
 Handy: unten „⋯ Mehr" → ganz unten im Menü. Die Wahl wird **pro Gerät** im `localStorage` (`iris_theme`) gespeichert
 und in `main.tsx` vor dem ersten Rendern angewendet (`src/theme.ts`, setzt `<html data-theme="…">` und `theme-color`).
 
@@ -106,6 +106,7 @@ und in `main.tsx` vor dem ersten Rendern angewendet (`src/theme.ts`, setzt `<htm
 | Klassisch | `classic` (Default) | Ursprüngliches IRIS: Olivgrün/Sand, Cormorant Garamond + DM Sans, Radius 16 px |
 | Kreativ | `vivid` | Pastell-Verlaufshintergrund mit Farbflecken, halbtransparente Karten, Verlauf Violett→Pink auf Buttons/aktiven Elementen und Seitentiteln, Unbounded + Nunito, Radius 24 px |
 | Modern | `modern` | Monochrom Zink/Schwarz mit Indigo-Akzent, Manrope (fett, enge Laufweite), kleine Radien 8–12 px, feine Schatten |
+| Abend | `dark` | Dunkles Design: warmes Anthrazit `#121316`/`#1C1E23`, helles Salbeigrün als Primary (dunkler Text darauf), Cormorant + DM Sans, `color-scheme: dark` für native Felder |
 
 Technik (alles in `frontend/src/styles/globals.css`):
 - Farben, Schatten und Schriften sind CSS-Variablen (`--color-*`, `--font-heading`, `--font-body`), pro Theme überschrieben.
@@ -116,7 +117,11 @@ Technik (alles in `frontend/src/styles/globals.css`):
   die `--color-*`-Variablen statt fester Farben benutzen.
 - Im Kreativ-Theme nur fixierte Ebenen (Navigation, Sheets) mit `backdrop-filter` — auf normalen Karten würde es
   darin enthaltene `position: fixed`-Dialoge einsperren.
-- Pastellfarbene Akzentblöcke mit festen Tailwind-Farben (z. B. `bg-rose-50` in „Маятники") bleiben in allen Themes gleich.
+- Pastellfarbene Akzentblöcke mit festen Tailwind-Farben (z. B. `bg-rose-50` in „Маятники") bleiben in den hellen
+  Themes gleich. Im Abend-Theme werden sie zentral in `globals.css` umgefärbt (`bg-*-50/100/200` → transparente
+  Tönung, `border-*-200..400` → halbtransparent, `text-*-600..900` → helles `*-300`). **Neue feste Tailwind-Farben**
+  (andere Farbtöne/Stufen) dort ergänzen, sonst erscheinen im Abend-Theme helle Flecken.
+- Das Abend-Theme färbt auch Recharts-Achsen und -Tooltips um (`.recharts-*`).
 
 ## Lokale Entwicklung
 

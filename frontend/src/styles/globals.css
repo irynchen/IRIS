@@ -61,6 +61,24 @@
   --heading-size-adjust: 0.4;
 }
 
+/* 4) Abend — dunkles Design: warmes Anthrazit, helles Salbeigrün, gedämpfte Akzente */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #121316;
+  --color-surface: #1C1E23;
+  --color-primary: #9CC2A0;
+  --color-secondary: #D2B48C;
+  --color-accent: #8DB8E0;
+  --color-muted: #2D3038;
+  --color-text: #E9E6E0;
+  --color-text-muted: #9D9A93;
+  --radius-card: 16px;
+  --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.45);
+  --font-heading: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --heading-size-adjust: none;
+}
+
 html {
   background-color: #F7F4EF;
 }
@@ -150,6 +168,79 @@ h1, h2, h3, [style*="--font-heading"] {
 [data-theme="modern"] .bg-\[var\(--color-surface\)\] {
   box-shadow: var(--shadow-card);
 }
+
+/* ── Abend: Details ── */
+[data-theme="dark"] {
+  background-color: #121316;
+}
+/* Helles Primary → dunkler Text auf Primary-Flächen statt Weiß */
+[data-theme="dark"] .bg-\[var\(--color-primary\)\].text-white,
+[data-theme="dark"] .bg-\[var\(--color-primary\)\] .text-white {
+  color: #121316;
+}
+/* Tailwind-Preflight setzt Rahmen ohne Farbklasse auf #e5e7eb (im Dunkeln grell). :where() = Spezifität 0,
+   damit Utility-Klassen wie border-[var(--color-primary)] weiterhin gewinnen. */
+:where([data-theme="dark"]) *, :where([data-theme="dark"]) ::before, :where([data-theme="dark"]) ::after {
+  border-color: var(--color-muted);
+}
+[data-theme="dark"] .bg-white { background-color: var(--color-surface); }
+[data-theme="dark"] .bg-gray-100 { background-color: var(--color-muted); }
+[data-theme="dark"] .text-gray-600 { color: var(--color-text-muted); }
+
+/* Feste Pastell-Klassen (z. B. Маятники, Hinweise, Lösch-Buttons) für dunklen Grund abdunkeln:
+   bg-*-50/100/200 → transparente Tönung, border-*-200..400 → halbtransparent, text-*-600..900 → *-300 */
+[data-theme="dark"] .bg-amber-50 { background-color: rgba(245, 158, 11, 0.10); }
+[data-theme="dark"] .bg-amber-100, [data-theme="dark"] .hover\:bg-amber-100:hover { background-color: rgba(245, 158, 11, 0.16); }
+[data-theme="dark"] .border-amber-200, [data-theme="dark"] .border-amber-300, [data-theme="dark"] .border-amber-400 { border-color: rgba(245, 158, 11, 0.40); }
+[data-theme="dark"] .text-amber-600, [data-theme="dark"] .text-amber-700, [data-theme="dark"] .text-amber-800, [data-theme="dark"] .text-amber-900 { color: #FCD34D; }
+
+[data-theme="dark"] .bg-violet-50 { background-color: rgba(139, 92, 246, 0.10); }
+[data-theme="dark"] .bg-violet-100, [data-theme="dark"] .hover\:bg-violet-100:hover { background-color: rgba(139, 92, 246, 0.16); }
+[data-theme="dark"] .border-violet-200, [data-theme="dark"] .border-violet-300, [data-theme="dark"] .border-violet-400 { border-color: rgba(139, 92, 246, 0.40); }
+[data-theme="dark"] .text-violet-600, [data-theme="dark"] .text-violet-700, [data-theme="dark"] .text-violet-800, [data-theme="dark"] .text-violet-900 { color: #C4B5FD; }
+
+[data-theme="dark"] .bg-rose-50 { background-color: rgba(244, 63, 94, 0.10); }
+[data-theme="dark"] .bg-rose-100, [data-theme="dark"] .hover\:bg-rose-100:hover { background-color: rgba(244, 63, 94, 0.16); }
+[data-theme="dark"] .border-rose-200, [data-theme="dark"] .border-rose-300, [data-theme="dark"] .border-rose-400 { border-color: rgba(244, 63, 94, 0.40); }
+[data-theme="dark"] .text-rose-600, [data-theme="dark"] .text-rose-700, [data-theme="dark"] .text-rose-800, [data-theme="dark"] .text-rose-900 { color: #FDA4AF; }
+
+[data-theme="dark"] .bg-red-50 { background-color: rgba(239, 68, 68, 0.10); }
+[data-theme="dark"] .bg-red-100, [data-theme="dark"] .hover\:bg-red-100:hover { background-color: rgba(239, 68, 68, 0.16); }
+[data-theme="dark"] .bg-red-200, [data-theme="dark"] .hover\:bg-red-200:hover { background-color: rgba(239, 68, 68, 0.26); }
+[data-theme="dark"] .border-red-300, [data-theme="dark"] .border-red-400 { border-color: rgba(239, 68, 68, 0.45); }
+[data-theme="dark"] .text-red-600, [data-theme="dark"] .text-red-700 { color: #FCA5A5; }
+
+[data-theme="dark"] .bg-green-50 { background-color: rgba(34, 197, 94, 0.10); }
+[data-theme="dark"] .bg-green-100, [data-theme="dark"] .hover\:bg-green-100:hover { background-color: rgba(34, 197, 94, 0.16); }
+[data-theme="dark"] .border-green-200, [data-theme="dark"] .border-green-400 { border-color: rgba(34, 197, 94, 0.40); }
+[data-theme="dark"] .text-green-600, [data-theme="dark"] .text-green-700, [data-theme="dark"] .text-green-800 { color: #86EFAC; }
+
+[data-theme="dark"] .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.10); }
+[data-theme="dark"] .border-emerald-300 { border-color: rgba(16, 185, 129, 0.40); }
+[data-theme="dark"] .text-emerald-700 { color: #6EE7B7; }
+
+[data-theme="dark"] .bg-orange-50 { background-color: rgba(249, 115, 22, 0.10); }
+[data-theme="dark"] .bg-orange-100, [data-theme="dark"] .hover\:bg-orange-100:hover { background-color: rgba(249, 115, 22, 0.16); }
+[data-theme="dark"] .border-orange-300 { border-color: rgba(249, 115, 22, 0.40); }
+[data-theme="dark"] .text-orange-700 { color: #FDBA74; }
+
+[data-theme="dark"] .bg-purple-100 { background-color: rgba(168, 85, 247, 0.16); }
+[data-theme="dark"] .text-purple-700 { color: #D8B4FE; }
+[data-theme="dark"] .bg-pink-100 { background-color: rgba(236, 72, 153, 0.16); }
+[data-theme="dark"] .text-pink-700 { color: #F9A8D4; }
+[data-theme="dark"] .bg-blue-50 { background-color: rgba(59, 130, 246, 0.10); }
+[data-theme="dark"] .bg-blue-100, [data-theme="dark"] .hover\:bg-blue-100:hover { background-color: rgba(59, 130, 246, 0.16); }
+[data-theme="dark"] .text-blue-700 { color: #93C5FD; }
+
+/* Diagramme (Recharts): Achsenbeschriftung und Tooltip */
+[data-theme="dark"] .recharts-cartesian-axis-tick-value,
+[data-theme="dark"] .recharts-text { fill: var(--color-text-muted); }
+[data-theme="dark"] .recharts-default-tooltip {
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-muted) !important;
+  color: var(--color-text);
+}
+[data-theme="dark"] .recharts-tooltip-label { color: var(--color-text); }
 
 * {
   box-sizing: border-box;
